@@ -69,6 +69,7 @@ nav.dock{display:flex;align-items:center;gap:1rem;padding:.55rem 1.2rem calc(.55
 .tab{min-width:6.6rem;min-height:3.7rem;border-radius:1rem;border:none;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem;font-weight:700;font-size:.85rem}
 .tab svg{width:1.55rem;height:1.55rem}
 .tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.tab.exit{color:var(--bad-text)}
 .btn{min-height:3.6rem;padding:0 1.3rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;white-space:nowrap}
 .btn svg{width:1.4rem;height:1.4rem;flex:none}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -350,6 +351,7 @@ const I={
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 6H9l-6 6 6 6h12zM17 10l-4 4M13 10l4 4"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  exit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 012 2v12a2 2 0 01-2 2h-4M9 8l-4 4 4 4M5 12h11"/></svg>',
   eraser:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h13M5.5 15.5l9-9 5 5-6.5 6.5H9z"/></svg>'
 };
 
@@ -637,7 +639,8 @@ function renderGroups(){
 }
 function renderTabs(){
   const tabs=[["att","الحضور",I.att],["stu","الطلاب",I.stu],["fin","الحسابات",I.fin],["set","الإعدادات",I.set]];
-  $("#tabs").innerHTML=tabs.map(t=>'<button type="button" class="tab" data-act="screen" data-s="'+t[0]+'"'+(S.screen===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span></button>').join("");
+  $("#tabs").innerHTML=tabs.map(t=>'<button type="button" class="tab" data-act="screen" data-s="'+t[0]+'"'+(S.screen===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span></button>').join("")+
+    (NATIVE?'<button type="button" class="tab exit" data-act="exitapp">'+I.exit+'<span>خروج</span></button>':'');
 }
 function renderDock(){
   const a=$("#actions");let h="";
@@ -1213,6 +1216,7 @@ document.addEventListener("click",async ev=>{
     case "showabs":{const cur=(core().set||{}).showAbs!==0;write("core",{set:{showAbs:cur?0:1}});return}
     case "syncnow":Sync.backoff=0;Sync.fatal=null;kick(0);Sync.want.forEach(n=>{if(!D(n).unsub)openDoc(n)});toast("بيزامن…");return;
     case "syncinfo":openSheetRaw({type:"syncinfo",live:true});return;
+    case "exitapp":exitApp();return;
     case "dismissfatal":Sync.fatal=null;updateAll();return;
     case "export":doExport();return;
     case "importyes":{const s=S.sheet;closeSheet();doImport(s.data);return}
@@ -1383,6 +1387,14 @@ async function boot(){
   S.ready=true;curGroup();mountView();kick(0);
   setInterval(()=>{if(Sync.outbox.length&&!Sync.flushing)kick(0)},20000);
 }
+/* Close the Android app: lock finance, make sure every pending save reached the device files, then exit. */
+async function exitApp(){
+  if(F.key)lockFin();
+  toast("بيحفظ ويقفل…");
+  if(Sync.outbox.length)await Promise.race([flush(),sleep(1500)]);
+  for(let i=0;i<40&&(Durable.busy.size||Durable.pend.size);i++)await sleep(50);
+  const A=Plug("App");if(A&&A.exitApp)A.exitApp();
+}
 window.__kashf={S:S,Sync:Sync,F:F,view:view,NATIVE:NATIVE,importData:doImport};
 if(NATIVE){
   const A=Plug("App");
@@ -1390,7 +1402,7 @@ if(NATIVE){
     if(S.sheet){if(S.sheet.type!=="recovery")closeSheet();return}
     if(S.search){S.search=false;S.q="";updateAll();return}
     if(S.screen!=="att"){setScreen("att");return}
-    if(A.exitApp)A.exitApp();
+    exitApp();
   });
 }
 boot();

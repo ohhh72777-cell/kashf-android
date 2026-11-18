@@ -254,6 +254,19 @@ def run():
     ok("phone portrait", dim[1] > dim[0], dim)
     shot("phone_portrait")
 
+    # --- exit button
+    p.click('[data-act="screen"][data-s="att"]')
+    time.sleep(0.5)
+    ok("exit button visible", p.ev("!!document.querySelector('[data-act=exitapp]')"))
+    p.tap('[data-act="exitapp"]')
+    time.sleep(3)
+    focus = adb("shell dumpsys window | grep -m1 mCurrentFocus")
+    ok("exit button closes the app", PKG not in focus, focus)
+    launch()
+    p = Page()
+    p.wait("document.querySelectorAll('#agrid .card').length===40")
+    ok("data intact after exiting with the button", p.ev("document.querySelector('#agrid .card:nth-child(1)').classList.contains('on')"))
+
     # --- restore a backup made with the Claude (web) version on a clean install
     adb(f"shell pm clear {PKG}")
     launch()
