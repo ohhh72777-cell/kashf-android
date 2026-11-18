@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كشف الغياب والمصاريف</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Board-first layout: fixed top bar (groups + sync), scrolling work area, fixed bottom dock
+   (actions on one side, screen tabs on the other) so the hands reach everything on a 75" board. */
+:root{
+  --bg:#f2f4f3;--surface:#ffffff;--surface2:#eaeeec;--ink:#12201b;--muted:#56645e;
+  --line:#d3dbd7;--line2:#b9c4bf;
+  --accent:#0f6b54;--accent-ink:#ffffff;--accent-soft:#dbede6;
+  --ok:#17804a;--ok-line:#116a3c;--ok-soft:#dcf2e4;--ok-text:#0f6a3a;
+  --bad:#bf3328;--bad-soft:#fbe5e2;--bad-text:#a52a20;
+  --warn:#a76505;--warn-soft:#fcefd5;--warn-text:#8a5304;
+  --display:"Alexandria","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --font:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --k:1;
+  font-size:calc(clamp(14px, .55vw + 8px, 30px) * var(--k));
+  color-scheme:light;
+}
+:root[data-size="s"]{--k:.88}
+:root[data-size="l"]{--k:1.15}
+:root[data-theme="dark"]{
+  --bg:#0d1412;--surface:#16201d;--surface2:#1d2a26;--ink:#e6eeea;--muted:#95a69f;
+  --line:#2a3833;--line2:#3d4f48;
+  --accent:#3dbb95;--accent-ink:#06231b;--accent-soft:#163a30;
+  --ok:#1f9a59;--ok-line:#2fb36c;--ok-soft:#153526;--ok-text:#5fd193;
+  --bad:#e0645a;--bad-soft:#3e1f1c;--bad-text:#f08a80;
+  --warn:#e0ad4f;--warn-soft:#3a2c12;--warn-text:#e9bd6a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:1rem;line-height:1.5;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;overflow:hidden}
+input,textarea{-webkit-user-select:text;user-select:text}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-touch-callout:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+svg{display:block}
+
+.app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr)}
+
+/* top bar */
+header.top{display:flex;align-items:center;gap:1rem;padding:.6rem 1.2rem;background:var(--surface);border-bottom:1px solid var(--line);min-width:0}
+.brand{flex:none;display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.brand b{font-family:var(--display);font-weight:700;font-size:1.05rem;white-space:nowrap}
+.sync{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--muted);font-weight:600;white-space:nowrap;border:none;background:none;padding:0;min-height:1.6rem}
+.sync i{width:.62rem;height:.62rem;border-radius:50%;background:var(--ok);flex:none}
+.sync.wait i{background:var(--warn)}.sync.off i{background:var(--bad)}.sync.local i{background:var(--muted)}
+.groups{flex:1;min-width:0;display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;padding:.1rem 0}
+.groups::-webkit-scrollbar{display:none}
+.gchip{flex:none;min-height:3.1rem;padding:0 1.25rem;border-radius:1.55rem;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:1rem;white-space:nowrap}
+.gchip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.gchip.add{border-style:dashed;color:var(--accent);background:transparent}
+
+main#view{overflow-y:auto;overflow-x:hidden;padding:1rem 1.2rem 1.4rem;min-height:0;-webkit-overflow-scrolling:touch}
+
+/* bottom dock */
+nav.dock{display:flex;align-items:center;gap:1rem;padding:.55rem 1.2rem calc(.55rem + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line)}
+.actions{flex:1;display:flex;gap:.6rem;align-items:center;min-width:0;flex-wrap:wrap}
+.tabs{display:flex;gap:.35rem;flex:none}
+.tab{min-width:6.6rem;min-height:3.7rem;border-radius:1rem;border:none;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.15rem;font-weight:700;font-size:.85rem}
+.tab svg{width:1.55rem;height:1.55rem}
+.tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.btn{min-height:3.6rem;padding:0 1.3rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;white-space:nowrap}
+.btn svg{width:1.4rem;height:1.4rem;flex:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.danger{color:var(--bad-text);border-color:var(--bad)}
+.btn.danger.fill{background:var(--bad);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--accent)}
+.btn.sm{min-height:2.9rem;padding:0 1rem;font-size:.92rem;border-radius:.85rem}
+.btn:disabled{opacity:.4;cursor:default}
+.btn .badge{min-width:1.5rem;height:1.5rem;border-radius:.75rem;background:var(--surface2);color:var(--ink);font-size:.78rem;display:inline-grid;place-items:center;padding:0 .35rem}
+.btn.primary .badge{background:rgba(255,255,255,.22);color:inherit}
+.btn:active:not(:disabled),.tab:active,.gchip:active,.dn-btn:active{transform:scale(.97)}
+
+/* attendance head */
+.atthead{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem 1.2rem;margin-bottom:1rem}
+.datenav{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.dn-btn{width:3.5rem;height:3.5rem;flex:none;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.dn-btn svg{width:1.5rem;height:1.5rem}
+.dn-mid{position:relative;min-height:3.5rem;padding:0 1.3rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:.7rem;font-family:var(--display);font-weight:700;font-size:1.22rem}
+.dn-mid input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.tag{font-family:var(--font);font-size:.8rem;font-weight:700;padding:.15rem .65rem;border-radius:1rem;background:var(--accent-soft);color:var(--accent)}
+.stats{display:flex;gap:.6rem;margin-inline-start:auto;flex-wrap:wrap}
+.stat{min-width:6.4rem;padding:.4rem .95rem .5rem;border-radius:1rem;background:var(--surface);border:1.5px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.stat span{font-size:.78rem;color:var(--muted);font-weight:700}
+.stat b{font-family:var(--display);font-weight:700;font-size:1.75rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat.ok b{color:var(--ok-text)}.stat.bad b{color:var(--bad-text)}.stat.warn b{color:var(--warn-text)}
+.stat.wide{min-width:9rem}
+.meter{height:.4rem;border-radius:.2rem;background:var(--surface2);overflow:hidden;margin-top:.3rem}
+.meter i{display:block;height:100%;background:var(--ok)}
+
+.searchbar{display:flex;gap:.6rem;margin-bottom:1rem;align-items:center}
+.searchbar input{flex:1;min-width:0;min-height:3.6rem;border-radius:1rem;border:2px solid var(--accent);background:var(--surface);padding:0 1.2rem;font-size:1.2rem;font-weight:600}
+
+/* student cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(12.6rem,1fr));gap:.7rem}
+.card{position:relative;min-height:5.5rem;padding:.75rem .9rem .75rem .75rem;border-radius:1rem;border:2px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:.6rem;text-align:start;transition:background-color .12s ease,border-color .12s ease,color .12s ease}
+.card .no{position:absolute;top:.35rem;inset-inline-start:.6rem;font-size:.74rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.card .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:.1rem;padding-top:.55rem}
+.card .nm{font-weight:700;font-size:1.18rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.card .ck{flex:none;width:2.4rem;height:2.4rem;border-radius:50%;border:2px dashed var(--line2);display:grid;place-items:center;color:transparent}
+.card .ck svg{width:1.45rem;height:1.45rem}
+.card .ab{font-size:.74rem;font-weight:700;color:var(--bad-text)}
+.card.on{background:var(--ok);border-color:var(--ok-line);color:#fff}
+.card.on .no{color:rgba(255,255,255,.8)}
+.card.on .ab{color:rgba(255,255,255,.85)}
+.card.on .ck{background:#fff;border:none;color:var(--ok)}
+.card:active{transform:scale(.98)}
+
+.empty{border:1.5px dashed var(--line2);border-radius:1.2rem;padding:2.2rem 1.5rem;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:1rem;font-size:1.05rem}
+.empty h2{margin:0;color:var(--ink);font-family:var(--display);font-size:1.4rem}
+.quick{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center}
+.banner{display:flex;align-items:center;gap:1rem;justify-content:space-between;background:var(--warn-soft);color:var(--warn-text);border-radius:1rem;padding:.8rem 1.1rem;margin-bottom:1rem;font-weight:600}
+
+/* sections & rows (students, settings) */
+.bar{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;margin-bottom:1rem}
+.bar .grow{flex:1}
+h2.title{font-family:var(--display);font-size:1.45rem;margin:0}
+.sub{color:var(--muted);font-size:.92rem;font-weight:500}
+.addbar{display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap}
+.addbar input{flex:1;min-width:12rem;min-height:3.6rem;border-radius:1rem;border:1.5px solid var(--line2);background:var(--surface);padding:0 1.1rem;font-size:1.1rem}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:1rem;overflow:hidden;background:var(--surface)}
+.seg button{min-height:3.1rem;padding:0 1.1rem;border:none;background:transparent;font-weight:700;font-size:.95rem}
+.seg button+button{border-inline-start:1.5px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(25rem,1fr));gap:.6rem}
+.row{display:flex;align-items:center;gap:.8rem;min-height:4.2rem;padding:.5rem .6rem .5rem 1rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);text-align:start}
+.row .no{width:2rem;flex:none;text-align:center;color:var(--muted);font-weight:700;font-size:.85rem}
+.row .who{flex:1;min-width:0;display:flex;flex-direction:column}
+.row .who b{font-size:1.08rem;overflow-wrap:anywhere}
+.row .who small{color:var(--muted);font-size:.82rem}
+.ibtn{width:3.1rem;height:3.1rem;flex:none;border-radius:.85rem;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.ibtn svg{width:1.3rem;height:1.3rem}
+.ibtn:disabled{opacity:.3}
+details.del{margin-top:1.4rem}
+details.del summary{cursor:pointer;min-height:3rem;display:flex;align-items:center;font-weight:700;color:var(--muted);list-style:none}
+details.del summary::-webkit-details-marker{display:none}
+
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:1.2rem;padding:1.1rem 1.2rem;display:flex;flex-direction:column;gap:.9rem}
+.panel h3{margin:0;font-family:var(--display);font-size:1.15rem}
+.panels{display:grid;grid-template-columns:repeat(auto-fill,minmax(27rem,1fr));gap:1rem;align-items:start}
+.line{display:flex;align-items:center;gap:1rem;justify-content:space-between;flex-wrap:wrap}
+.line .txt{flex:1;min-width:12rem}
+.line .txt b{display:block}
+.switch{min-width:5.2rem;min-height:3rem;border-radius:1.5rem;border:1.5px solid var(--line2);background:var(--surface2);font-weight:700}
+.switch[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.note{font-size:.88rem;color:var(--muted);line-height:1.6}
+.note b{color:var(--ink)}
+
+/* finance */
+.lockwrap{display:flex;justify-content:center;padding-top:1rem}
+.lockcard{width:min(30rem,100%);background:var(--surface);border:1.5px solid var(--line);border-radius:1.4rem;padding:1.6rem 1.5rem;display:flex;flex-direction:column;align-items:center;gap:1rem;text-align:center}
+.lockcard .lk{width:3.6rem;height:3.6rem;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.lockcard .lk svg{width:1.8rem;height:1.8rem}
+.lockcard h2{margin:0;font-family:var(--display);font-size:1.4rem}
+.dots{display:flex;gap:1rem;justify-content:center;direction:ltr;min-height:1.4rem}
+.dots i{width:1.15rem;height:1.15rem;border-radius:50%;border:2px solid var(--line2)}
+.dots i.f{background:var(--ink);border-color:var(--ink)}
+.dots.long{gap:.45rem}.dots.long i{width:.8rem;height:.8rem}
+.dots.long i:nth-child(4n){margin-inline-end:.5rem}
+.pperr{color:var(--bad-text);font-weight:700;min-height:1.5rem}
+.keys{display:grid;grid-template-columns:repeat(3,5.2rem);gap:.7rem;direction:ltr}
+.key{height:4.4rem;border-radius:1.1rem;border:1.5px solid var(--line);background:var(--surface2);font-family:var(--display);font-size:1.7rem;font-weight:700;display:grid;place-items:center}
+.key svg{width:1.5rem;height:1.5rem}
+.key.fn{font-family:var(--font);font-size:.95rem;background:transparent}
+.key:active{background:var(--line)}
+.shake{animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.fbar{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center;margin-bottom:.9rem}
+.mchips{display:flex;gap:.5rem;flex-wrap:wrap;flex:1;min-width:0}
+.mchip{min-height:3.1rem;padding:0 1.15rem;border-radius:1.55rem;border:1.5px solid var(--line);background:var(--surface);font-weight:700}
+.mchip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.mchip.add{border-style:dashed;color:var(--accent);background:transparent}
+.matrix{overflow-x:auto;border:1.5px solid var(--line);border-radius:1.1rem;background:var(--surface)}
+.mrow{display:grid;align-items:stretch;min-width:max-content;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:none}
+.mrow>*{display:flex;align-items:center;padding:.35rem .5rem}
+.mrow .mno{justify-content:center;color:var(--muted);font-weight:700;font-size:.85rem}
+.mrow .mname{font-weight:700;font-size:1.06rem;position:sticky;inset-inline-start:0;background:var(--surface);z-index:1;overflow-wrap:anywhere;line-height:1.3}
+.mrow.mhead{position:sticky;top:0;z-index:2;background:var(--surface2)}
+.mrow.mhead>*{font-weight:700;font-size:.85rem;color:var(--muted);min-height:3rem}
+.mrow.mhead .mname{background:var(--surface2)}
+.mhcell{border:none;background:transparent;justify-content:center;font-weight:700;border-radius:.7rem}
+.mhcell[aria-pressed="true"]{color:var(--accent);text-decoration:underline;text-underline-offset:.35rem;text-decoration-thickness:2px}
+.fee{min-height:3.1rem;width:100%;border-radius:.85rem;border:1.5px dashed var(--line2);background:transparent;font-weight:700;font-size:.92rem;font-variant-numeric:tabular-nums}
+.fee.custom{border-style:solid;border-color:var(--accent);color:var(--accent)}
+.pc{width:100%;min-height:3.3rem;border-radius:.9rem;border:1.5px solid var(--bad);background:var(--bad-soft);color:var(--bad-text);font-weight:700;font-size:.92rem;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;font-variant-numeric:tabular-nums}
+.pc.paid{background:var(--ok);border-color:var(--ok-line);color:#fff}
+.pc.part{background:var(--warn-soft);border-color:var(--warn);color:var(--warn-text)}
+.pc small{font-size:.74rem;font-weight:600;opacity:.9}
+.pc.sel{box-shadow:inset 0 0 0 2px var(--ink)}
+.pc svg{width:1.3rem;height:1.3rem}
+
+/* sheets (in-page, not browser popups) */
+.ov{position:fixed;inset:0;background:rgba(6,14,11,.5);display:flex;align-items:center;justify-content:center;z-index:30;padding:1rem}
+.sheet{width:min(36rem,100%);max-height:calc(100dvh - 2rem);overflow-y:auto;background:var(--surface);border-radius:1.4rem;padding:1.3rem 1.3rem 1.4rem;display:flex;flex-direction:column;gap:1rem}
+.sheet.wide{width:min(48rem,100%)}
+.sheet h2{margin:0;font-family:var(--display);font-size:1.3rem}
+.sheet .acts{display:flex;gap:.6rem;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:.35rem}
+.field label{font-weight:700;font-size:.92rem}
+.field input,.field textarea{min-height:3.5rem;border-radius:.95rem;border:1.5px solid var(--line2);background:var(--bg);padding:.5rem 1rem;font-size:1.08rem;width:100%}
+.field textarea{min-height:12rem;resize:vertical;line-height:1.7}
+.chipset{display:flex;flex-wrap:wrap;gap:.5rem}
+.amount{font-family:var(--display);font-size:2.4rem;font-weight:700;text-align:center;min-height:3.6rem;font-variant-numeric:tabular-nums;border-radius:1rem;background:var(--bg);padding:.3rem}
+.sheet .keys{align-self:center}
+.days{display:flex;flex-wrap:wrap;gap:.4rem}
+.days span{min-width:2.6rem;height:2.6rem;border-radius:.7rem;display:grid;place-items:center;font-weight:700;font-size:.9rem}
+.days .p{background:var(--ok-soft);color:var(--ok-text)}
+.days .a{background:var(--bad-soft);color:var(--bad-text)}
+.code{font-family:var(--display);font-size:2rem;font-weight:700;letter-spacing:.12em;text-align:center;direction:ltr;background:var(--bg);border-radius:1rem;padding:.8rem}
+
+.toast{position:fixed;bottom:6.4rem;left:50%;transform:translateX(-50%);z-index:40;background:var(--ink);color:var(--bg);border-radius:1rem;padding:.7rem .8rem .7rem 1.2rem;display:flex;align-items:center;gap:1rem;font-weight:600;max-width:calc(100% - 2rem);box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.toast button{min-height:2.9rem;border:none;background:rgba(255,255,255,.14);color:inherit;border-radius:.8rem;padding:0 1rem;font-weight:700}
+
+@media (max-width:760px){
+  :root{font-size:calc(15px * var(--k))}
+  header.top{flex-wrap:wrap;padding:.5rem .8rem;gap:.5rem}
+  .brand{flex-direction:row;align-items:center;gap:.8rem;width:100%;justify-content:space-between}
+  .groups{width:100%;flex:none}
+  main#view{padding:.8rem .8rem 1.2rem}
+  nav.dock{flex-direction:column;align-items:stretch;gap:.5rem;padding:.5rem .6rem calc(.5rem + env(safe-area-inset-bottom))}
+  .actions{flex-wrap:nowrap;overflow-x:auto}
+  .actions:empty{display:none}
+  .actions .btn{min-height:3.1rem;padding:0 .9rem;flex:none}
+  .tabs{justify-content:space-around}
+  .tab{min-width:0;flex:1;min-height:3.4rem}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+  .card{min-height:4.8rem}
+  .card .nm{font-size:1.05rem}
+  .stats{margin-inline-start:0;width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
+  .stat{min-width:0;padding:.35rem .5rem}
+  .stat b{font-size:1.35rem}
+  .dn-mid{font-size:1rem;padding:0 .8rem;flex:1}
+  .datenav{width:100%}
+  .rows,.panels{grid-template-columns:1fr}
+  .keys{grid-template-columns:repeat(3,4.8rem)}
+  .toast{bottom:9rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand"><b>كشف الغياب والمصاريف</b><button type="button" class="sync wait" id="sync" data-act="syncinfo"><i></i><span>بيوصل…</span></button></div>
+    <div class="groups" id="groups"></div>
+  </header>
+  <main id="view"><div class="empty">بيحمّل بياناتك…</div></main>
+  <nav class="dock" aria-label="التحكم">
+    <div class="actions" id="actions"></div>
+    <div class="tabs" id="tabs"></div>
+  </nav>
+</div>
+<div id="sheet"></div>
+<div id="toast" class="toast" hidden role="status"><span id="toastMsg"></span><button type="button" id="toastBtn" data-act="toastundo">تراجع</button></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =====================================================================
+   Utilities
+   ===================================================================== */
+const CAP=window.Capacitor;
+const NATIVE=!!(CAP&&typeof CAP.isNativePlatform==="function"&&CAP.isNativePlatform());
+const Plug=n=>NATIVE&&CAP.Plugins?CAP.Plugins[n]||null:null;
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const AD="٠١٢٣٤٥٦٧٨٩";
+const ar=v=>String(v).replace(/[0-9]/g,d=>AD[d]);
+const latin=s=>String(s).replace(/[٠-٩]/g,d=>AD.indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+const money=n=>ar(Math.round(Number(n)||0).toLocaleString("en-US"))+" ج";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const isObj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
+const clone=v=>v===undefined?undefined:JSON.parse(JSON.stringify(v));
+function merge(t,p){for(const k of Object.keys(p)){const v=p[k];if(isObj(v)){if(!isObj(t[k]))t[k]={};merge(t[k],v)}else t[k]=clone(v)}return t}
+function rid(n){const a=crypto.getRandomValues(new Uint8Array(n||8)),c="abcdefghijklmnopqrstuvwxyz0123456789";let s=c[a[0]%26];for(let i=1;i<a.length;i++)s+=c[a[i]%36];return s}
+const pad2=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+const todayStr=()=>ymd(new Date());
+const parseD=s=>{const p=s.split("-").map(Number);return new Date(p[0],p[1]-1,p[2]||1)};
+const fmtDay=new Intl.DateTimeFormat("ar-EG",{weekday:"long",day:"numeric",month:"long"});
+const fmtMonthY=new Intl.DateTimeFormat("ar-EG",{month:"long",year:"numeric"});
+const MONTHS=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+function norm(s){return String(s||"").replace(/[ً-ٰٟـ]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/\s+/g," ").trim().toLowerCase()}
+const cmpName=(a,b)=>a.n.localeCompare(b.n,"ar");
+function withTimeout(p,ms){let t;return Promise.race([p,new Promise((_,rej)=>{t=setTimeout(()=>rej({code:"timeout"}),ms)})]).finally(()=>clearTimeout(t))}
+const LS={
+  get(k){try{const t=localStorage.getItem(k);return t==null?undefined:JSON.parse(t)}catch(e){return undefined}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
+  del(k){try{localStorage.removeItem(k)}catch(e){}},
+  keys(pre){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(pre)===0)out.push(k)}}catch(e){}return out}
+};
+function setHTML(el,h){if(el&&el._h!==h){el.innerHTML=h;el._h=h}}
+const times=n=>n===1?"مرة":n===2?"مرتين":n<=10?ar(n)+" مرات":ar(n)+" مرة";
+
+const I={
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  att:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M8.5 14l2.5 2.5 4.5-5"/></svg>',
+  stu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.5 3.5 0 010 6.4M18.5 14.8c1.7.8 2.7 2.5 3 5.2"/></svg>',
+  fin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/><circle cx="12" cy="15.7" r="1.4"/></svg>',
+  set:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+  undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8H8.5V2.5"/><path d="M8.6 8A8 8 0 1112 20"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+  all:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5l4 4L15 8M12 16l1 1 8.5-9"/></svg>',
+  chevR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 6H9l-6 6 6 6h12zM17 10l-4 4M13 10l4 4"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  eraser:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h13M5.5 15.5l9-9 5 5-6.5 6.5H9z"/></svg>'
+};
+
+/* =====================================================================
+   Storage backends: cloud (claude db, per-user private) and local.
+   Both expose get / set / update(merge) / sub / list.
+   ===================================================================== */
+function CloudBackend(db,uid){
+  const col=db.collection("data/users/"+uid);
+  return {
+    kind:"cloud",
+    async get(n){const s=await col.doc(n).get();return s.exists?clone(s.data()):null},
+    set:(n,d)=>col.doc(n).set(d),
+    update:(n,p)=>col.doc(n).update(p),
+    sub(n,next,err){return col.doc(n).onSnapshot(s=>next(s.exists?clone(s.data()):null,s.metadata||{}),err)},
+    async list(){const q=await col.limit(1000).get();return q.docs.map(d=>[d.id,clone(d.data())])}
+  };
+}
+function LocalBackend(){
+  const P="k2:l:",subs={};
+  const read=n=>{const v=LS.get(P+n);return v===undefined?null:v};
+  const emit=n=>{(subs[n]||new Set()).forEach(cb=>cb(read(n),{fromCache:false}))};
+  window.addEventListener("storage",e=>{if(e.key&&e.key.indexOf(P)===0)emit(e.key.slice(P.length))});
+  return {
+    kind:"local",
+    async get(n){return read(n)},
+    async set(n,d){if(!LS.set(P+n,d))throw {code:"quota_exceeded"};emit(n)},
+    async update(n,p){const c=read(n);if(!c)throw {code:"invalid_argument",missing:true};merge(c,p);if(!LS.set(P+n,c))throw {code:"quota_exceeded"};emit(n)},
+    sub(n,next){(subs[n]=subs[n]||new Set()).add(next);setTimeout(()=>next(read(n),{fromCache:false}),0);return ()=>subs[n].delete(next)},
+    async list(){return LS.keys(P).map(k=>[k.slice(P.length),LS.get(k)])}
+  };
+}
+
+/* =====================================================================
+   Sync engine
+   - Every change is a small nested patch (field-level), queued in a
+     persistent outbox (survives reload / offline), and sent with
+     update() which merges field by field on the server: two devices
+     editing different students never overwrite each other; the same
+     field resolves to the last tap.
+   - Live onSnapshot subscriptions bring other devices' changes.
+   - The local view = server copy + still-pending patches, so the UI
+     never flickers back while a write is in flight.
+   ===================================================================== */
+const Sync={be:null,uid:"local",docs:{},outbox:[],flushing:false,backoff:0,retryT:null,kickT:null,
+  offline:false,lastErr:null,fatal:null,coreFresh:false,startedAt:Date.now(),lastOk:0};
+const okey=()=>"k2:o:"+Sync.uid;
+const ckey=n=>"k2:c:"+Sync.uid+":"+n;
+function D(n){let d=Sync.docs[n];if(!d){const c=LS.get(ckey(n));d=Sync.docs[n]={srv:c?c.d:null,cached:!!c,known:false,fresh:false,unsub:null,view:undefined}}return d}
+function view(n){
+  const d=D(n);
+  if(d.view===undefined){
+    let v=d.srv?clone(d.srv):null;
+    for(const op of Sync.outbox)if(op.n===n){v=v||{};merge(v,op.p)}
+    d.view=v;
+  }
+  return d.view;
+}
+function openDoc(n){
+  const d=D(n);if(d.unsub)return;
+  try{
+    d.unsub=Sync.be.sub(n,(data,meta)=>{
+      d.srv=data;d.known=true;d.view=undefined;d.ver=(d.ver||0)+1;
+      if(!meta||!meta.fromCache){d.fresh=true;LS.set(ckey(n),{d:data});if(n==="core")Sync.coreFresh=true}
+      notify(n);
+    },e=>{
+      d.unsub=null;
+      if(e&&(e.code==="unavailable"||e.code==="resource_exhausted"))setTimeout(()=>{if(Sync.want.has(n))openDoc(n)},4000);
+      else Sync.lastErr=e;
+      notify(n);
+    });
+  }catch(e){d.unsub=null}
+}
+function closeDoc(n){const d=Sync.docs[n];if(d&&d.unsub){try{d.unsub()}catch(e){}d.unsub=null}}
+Sync.want=new Set(["core","keys"]);
+function wantDocs(list){
+  const next=new Set(["core","keys"].concat(list));
+  if(next.size===Sync.want.size&&[...next].every(n=>Sync.want.has(n))){next.forEach(n=>{if(!D(n).unsub)openDoc(n)});return}
+  Sync.want.forEach(n=>{if(!next.has(n))closeDoc(n)});
+  Sync.want=next;next.forEach(openDoc);
+}
+function write(n,patch){
+  Sync.outbox.push({id:rid(10),n:n,p:clone(patch)});
+  persistOutbox();D(n).view=undefined;notify(n);kick(120);
+}
+function persistOutbox(){if(!LS.set(okey(),Sync.outbox))Sync.lsFull=true}
+function kick(ms){clearTimeout(Sync.kickT);Sync.kickT=setTimeout(flush,ms||0)}
+function pick(src,shape){const o={};for(const k of Object.keys(shape)){if(isObj(shape[k])){o[k]=pick(isObj(src&&src[k])?src[k]:{},shape[k])}else o[k]=src&&k in src?clone(src[k]):clone(shape[k])}return o}
+async function sendPatch(n,patch){
+  try{await withTimeout(Sync.be.update(n,patch),15000);return}
+  catch(e){
+    if(e&&(e.code==="invalid_argument"||e.missing)){
+      const cur=await withTimeout(Sync.be.get(n),15000);
+      if(cur==null){
+        await withTimeout(Sync.be.set(n,patch),15000);
+        // a second device could have created the same doc in the same instant;
+        // re-assert our current values for these fields once, a moment later.
+        setTimeout(()=>{const v=view(n);if(v){Sync.outbox.push({id:rid(10),n:n,p:pick(v,patch)});persistOutbox();kick(0)}},2500);
+        return;
+      }
+      throw {code:e.code,fatal:true,message:e.message};
+    }
+    if(e&&e.code==="unavailable"){await sleep(600+Math.random()*700);await withTimeout(Sync.be.update(n,patch),15000);return}
+    if(e&&(e.code==="quota_exceeded"||e.code==="transform_error"))throw {code:e.code,fatal:true,message:e.message};
+    throw e||{code:"unavailable"};
+  }
+}
+async function flush(){
+  if(Sync.flushing||!Sync.be)return;
+  if(!Sync.outbox.length){renderSync();return}
+  Sync.flushing=true;renderSync();
+  try{
+    while(Sync.outbox.length){
+      const n=Sync.outbox[0].n,batch=Sync.outbox.filter(o=>o.n===n),patch={};
+      batch.forEach(o=>merge(patch,o.p));
+      const d=D(n),ver=d.ver||0;let dropped=false;
+      try{await sendPatch(n,patch)}
+      catch(e){
+        if(e&&e.fatal){Sync.fatal=e;dropped=true}else throw e;
+      }
+      const ids=new Set(batch.map(o=>o.id));
+      Sync.outbox=Sync.outbox.filter(o=>!ids.has(o.id));persistOutbox();
+      // no snapshot since we sent → fold our patch into the server copy; otherwise trust the snapshot
+      if(!dropped&&(d.ver||0)===ver){d.srv=merge(d.srv||{},patch);LS.set(ckey(n),{d:d.srv})}
+      d.view=undefined;
+      Sync.offline=false;Sync.backoff=0;Sync.lastOk=Date.now();
+    }
+  }catch(e){
+    Sync.offline=true;Sync.lastErr=e;
+    Sync.backoff=Math.min(30000,Sync.backoff?Sync.backoff*2:2000);
+    clearTimeout(Sync.retryT);Sync.retryT=setTimeout(flush,Sync.backoff);
+  }finally{Sync.flushing=false;renderSync();scheduleRender()}
+}
+window.addEventListener("resize",()=>{if(S.screen==="fin")scheduleRender()});
+window.addEventListener("online",()=>{Sync.backoff=0;kick(0);Sync.want.forEach(n=>{if(!D(n).unsub)openDoc(n)})});
+window.addEventListener("offline",()=>{Sync.offline=true;renderSync()});
+
+let renderQ=false;
+function notify(){scheduleRender()}
+function scheduleRender(){if(renderQ)return;renderQ=true;requestAnimationFrame(()=>{renderQ=false;if(S.ready)updateAll()})}
+
+/* =====================================================================
+   Domain: core (groups, students), attendance (per group per month)
+   ===================================================================== */
+const S={ready:false,screen:"att",gid:null,date:todayStr(),q:"",search:false,undo:{att:[],fin:[]},
+  sheet:null,pp:null,fin:{mid:null,mode:"tap",filter:"all"},showDel:false,toastUndo:null};
+const DEV=Object.assign({theme:"auto",size:"m",lockOnLeave:true,shuffle:false},LS.get("k2:dev")||{});
+const saveDev=()=>LS.set("k2:dev",DEV);
+const core=()=>view("core")||{};
+function groupsList(){const g=core().groups||{};return Object.keys(g).filter(id=>g[id]&&!g[id].x).map(id=>Object.assign({id},g[id])).sort((a,b)=>(a.o||0)-(b.o||0)||String(a.n).localeCompare(String(b.n),"ar"))}
+function curGroup(){const gs=groupsList();let g=gs.find(x=>x.id===S.gid);if(!g&&gs.length){g=gs[0];S.gid=g.id}return g||null}
+function allStudents(){const st=core().students||{};return Object.keys(st).filter(id=>st[id]).map(id=>Object.assign({id},st[id]))}
+function student(id){const s=(core().students||{})[id];return s?Object.assign({id},s):null}
+function roster(gid){
+  const g=(core().groups||{})[gid];
+  const list=allStudents().filter(s=>!s.x&&s.g===gid&&s.n);
+  if(g&&g.s==="m")list.sort((a,b)=>((a.o||0)-(b.o||0))||cmpName(a,b));else list.sort(cmpName);
+  return list;
+}
+const attName=(gid,date)=>"a-"+gid+"-"+date.slice(0,7);
+function dayMap(gid,date){const v=view(attName(gid,date));return (v&&v.d&&v.d[date.slice(8)])||{}}
+function absentCounts(gid,date){
+  const v=view(attName(gid,date)),out={};if(!v||!v.d)return out;
+  const list=roster(gid);
+  for(const dd of Object.keys(v.d)){
+    if(dd===date.slice(8))continue;
+    const m=v.d[dd];if(!Object.keys(m).some(k=>m[k]===1))continue;
+    const dayStr=date.slice(0,8)+dd;
+    for(const s of list){if(m[s.id]!==1&&(!s.c||s.c<=dayStr))out[s.id]=(out[s.id]||0)+1}
+  }
+  return out;
+}
+function pushUndo(scope,u){const a=S.undo[scope];a.push(u);if(a.length>80)a.shift();renderDock()}
+
+/* =====================================================================
+   Finance: envelope encryption. A random 256-bit data key encrypts
+   every finance value separately (AES-GCM); the data key is stored only
+   wrapped by a key derived from the PIN (PBKDF2-SHA256), and a second
+   copy wrapped by a 12-digit recovery code. Amounts never reach the
+   cloud or this device's storage in plain text.
+   ===================================================================== */
+const te=new TextEncoder(),td=new TextDecoder();
+function b64(u8){let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)}
+function unb64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+const KDF_IT=250000;
+async function kdf(secret,salt,it){
+  const base=await crypto.subtle.importKey("raw",te.encode(secret),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:unb64(salt),iterations:it,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function encRaw(key,bytes){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv},key,bytes));const o=new Uint8Array(12+ct.length);o.set(iv);o.set(ct,12);return b64(o)}
+async function decRaw(key,s){const u=unb64(s);return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:u.slice(0,12)},key,u.slice(12)))}
+const F={key:null,raw:null,cache:new Map(),pending:new Set(),idleT:null};
+const unlocked=()=>!!F.key;
+async function useRaw(raw){F.raw=raw;F.key=await crypto.subtle.importKey("raw",raw,{name:"AES-GCM"},false,["encrypt","decrypt"])}
+async function encVal(v){const s=await encRaw(F.key,te.encode(JSON.stringify(v)));F.cache.set(s,v);return s}
+function decVal(s){
+  if(typeof s!=="string")return undefined;
+  if(F.cache.has(s))return F.cache.get(s);
+  if(F.key&&!F.pending.has(s)){F.pending.add(s);const k=F.key;decRaw(k,s).then(u=>{if(F.key===k)F.cache.set(s,JSON.parse(td.decode(u)))},()=>{if(F.key===k)F.cache.set(s,{bad:1})}).finally(()=>{F.pending.delete(s);scheduleRender()})}
+  return undefined;
+}
+async function decryptDoc(n){const v=view(n);if(!v)return;const jobs=[];(function walk(o){for(const k in o){const x=o[k];if(typeof x==="string"&&x.length>30&&!F.cache.has(x)){jobs.push(decRaw(F.key,x).then(u=>F.cache.set(x,JSON.parse(td.decode(u))),()=>F.cache.set(x,{bad:1})))}else if(isObj(x))walk(x)}})(v);await Promise.all(jobs)}
+const keysDoc=()=>view("keys");
+const hasPin=()=>{const k=keysDoc();return !!(k&&k.wp&&k.s)};
+function genRecovery(){const a=crypto.getRandomValues(new Uint32Array(12));return Array.from(a,x=>x%10).join("")}
+async function setupPin(pin){
+  const cur=await withTimeout(Sync.be.get("keys"),8000).catch(()=>keysDoc());
+  if(cur&&cur.wp)return {exists:true};
+  const raw=crypto.getRandomValues(new Uint8Array(32));
+  const s=b64(crypto.getRandomValues(new Uint8Array(16))),rs=b64(crypto.getRandomValues(new Uint8Array(16)));
+  const rc=genRecovery();
+  const wp=await encRaw(await kdf(pin,s,KDF_IT),raw);
+  const wr=await encRaw(await kdf(rc,rs,KDF_IT),raw);
+  write("keys",{v:1,it:KDF_IT,s:s,wp:wp,rs:rs,wr:wr,t:Date.now()});
+  await useRaw(raw);
+  return {code:rc};
+}
+async function unlockWith(secret,recovery){
+  const k=keysDoc();if(!k)return false;
+  try{const kek=await kdf(secret,recovery?k.rs:k.s,k.it||KDF_IT);const raw=await decRaw(kek,recovery?k.wr:k.wp);await useRaw(raw);return true}
+  catch(e){return false}
+}
+async function changePin(pin){
+  if(!F.raw)return false;
+  const s=b64(crypto.getRandomValues(new Uint8Array(16)));
+  const wp=await encRaw(await kdf(pin,s,KDF_IT),F.raw);
+  write("keys",{s:s,wp:wp,it:KDF_IT,t:Date.now()});return true;
+}
+function lockFin(){
+  if(F.raw)F.raw.fill(0);F.raw=null;F.key=null;F.cache.clear();F.pending.clear();
+  S.undo.fin=[];S.pp=null;clearTimeout(F.idleT);
+  if(S.sheet&&S.sheet.fin)closeSheet();
+  syncWanted();
+}
+function bumpIdle(){if(!F.key)return;clearTimeout(F.idleT);F.idleT=setTimeout(()=>{lockFin();if(S.screen==="fin")mountView();toast("الحسابات اتقفلت تلقائيًا")},180000)}
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&F.key){lockFin();if(S.screen==="fin")mountView()}if(!document.hidden){kick(0)}});
+document.addEventListener("pointerdown",bumpIdle,{passive:true});
+
+const finV=()=>view("fin")||{};
+function finMonths(){const mo=finV().mo||{},out=[];for(const id of Object.keys(mo)){const m=decVal(mo[id]);if(m&&!m.x&&!m.bad)out.push(Object.assign({id},m))}return out.sort((a,b)=>(a.o||0)-(b.o||0))}
+function gFee(gid){const c=(finV().gf||{})[gid];const v=c?decVal(c):null;return typeof v==="number"?v:0}
+function sFee(sid){const c=(finV().sf||{})[sid];const v=c?decVal(c):null;return typeof v==="number"?v:null}
+function feeOf(s){const f=sFee(s.id);return f!=null?f:gFee(s.g)}
+function payOf(mid,sid){const v=view("fp-"+mid),c=v&&v.e&&v.e[sid];const p=c?decVal(c):null;return p&&p.p?p:null}
+function payState(p,fee){if(!p)return "none";if(fee>0&&(p.a||0)<fee)return "part";return "paid"}
+async function setPay(mid,sid,val){write("fp-"+mid,{e:{[sid]:await encVal(val)}})}
+async function setFin(path,key,val){write("fin",{[path]:{[key]:await encVal(val)}})}
+function syncWanted(){
+  const list=[];const g=curGroup();
+  if(g&&(S.screen==="att"))list.push(attName(g.id,S.date));
+  if(F.key){list.push("fin");finMonths().forEach(m=>list.push("fp-"+m.id))}
+  wantDocs(list);
+}
+
+/* =====================================================================
+   Rendering
+   ===================================================================== */
+function applyTheme(){
+  const r=document.documentElement;
+  const dark=DEV.theme==="dark"||(DEV.theme==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
+  r.dataset.theme=dark?"dark":"light";r.dataset.size=DEV.size;
+}
+function renderSync(){
+  const el=$("#sync");if(!el)return;
+  const n=Sync.outbox.length;let cls="",txt="";
+  if(!Sync.be){cls="wait";txt="بيوصل…"}
+  else if(Sync.be.kind==="local"){cls=NATIVE?"":"local";txt=NATIVE?"محفوظ على الجهاز":(n?"على الجهاز ده فقط":"محفوظ على الجهاز ده فقط")}
+  else if(Sync.fatal){cls="off";txt="في تعديل اترفض"}
+  else if(Sync.offline||navigator.onLine===false){cls="off";txt=n?"أوفلاين — "+ar(n)+" تعديل هيتزامن":"أوفلاين"}
+  else if(n||Sync.flushing){cls="wait";txt="بيزامن…"}
+  else if(!Sync.coreFresh&&Date.now()-Sync.startedAt>10000){cls="off";txt="مش واصل للسحابة"}
+  else if(!Sync.coreFresh){cls="wait";txt="بيوصل…"}
+  else{cls="";txt="متزامن على كل أجهزتك"}
+  el.className="sync "+cls;el.lastChild.textContent=txt;
+}
+setInterval(renderSync,3000);
+
+function renderGroups(){
+  const host=$("#groups");
+  if(!S.ready||S.screen==="set"){host.innerHTML="";return}
+  const gs=groupsList();let h="";
+  gs.forEach(g=>{h+='<button type="button" class="gchip" data-act="group" data-id="'+g.id+'" aria-pressed="'+(g.id===S.gid)+'">'+esc(g.n)+'</button>'});
+  if(gs.length&&S.screen==="stu")h+='<button type="button" class="gchip add" data-act="newgroup">+ مجموعة</button>';
+  setHTML(host,h);
+}
+function renderTabs(){
+  const tabs=[["att","الحضور",I.att],["stu","الطلاب",I.stu],["fin","الحسابات",I.fin],["set","الإعدادات",I.set]];
+  $("#tabs").innerHTML=tabs.map(t=>'<button type="button" class="tab" data-act="screen" data-s="'+t[0]+'"'+(S.screen===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span></button>').join("");
+}
+function renderDock(){
+  const a=$("#actions");let h="";
+  if(!S.ready){a.innerHTML="";return}
+  const g=curGroup();
+  if(S.screen==="att"&&g){
+    const nU=S.undo.att.length;
+    h+='<button type="button" class="btn primary" data-act="allpresent">'+I.all+'كله حاضر</button>';
+    h+='<button type="button" class="btn" data-act="undo"'+(nU?'':' disabled')+'>'+I.undo+'تراجع'+(nU?'<span class="badge">'+ar(nU)+'</span>':'')+'</button>';
+    h+='<button type="button" class="btn" data-act="search"'+(S.search?' aria-pressed="true"':'')+'>'+I.search+'بحث</button>';
+    h+='<button type="button" class="btn sm ghost" data-act="copyabs">'+I.copy+'نسخ الغائبين</button>';
+    h+='<button type="button" class="btn sm ghost" data-act="clearday">'+I.eraser+'مسح اليوم</button>';
+  }else if(S.screen==="fin"&&F.key){
+    const nU=S.undo.fin.length;
+    h+='<button type="button" class="btn" data-act="undo"'+(nU?'':' disabled')+'>'+I.undo+'تراجع'+(nU?'<span class="badge">'+ar(nU)+'</span>':'')+'</button>';
+    h+='<button type="button" class="btn danger" data-act="lock">'+I.lock+'قفل الحسابات</button>';
+  }
+  a.innerHTML=h;
+}
+function updateAll(){
+  syncWanted();renderSync();renderGroups();renderDock();
+  const fn=UPDATE[S.screen];if(fn)fn();
+  if(S.sheet&&S.sheet.live)renderSheet();
+}
+function mountView(){
+  const v=$("#view");v.scrollTop=0;
+  v.innerHTML=MOUNT[S.screen]();
+  renderTabs();syncWanted();updateAll();
+}
+function setScreen(sc){
+  if(S.screen==="fin"&&sc!=="fin"&&DEV.lockOnLeave&&F.key)lockFin();
+  S.screen=sc;S.search=false;S.q="";S.pp=null;
+  LS.set("k2:ui",{gid:S.gid});
+  mountView();
+}
+
+/* ---------------- attendance ---------------- */
+const MOUNT={},UPDATE={};
+MOUNT.att=()=>
+  '<div id="banner"></div>'+
+  '<div class="atthead" id="ahead"><div class="datenav">'+
+    '<button type="button" class="dn-btn" data-act="day" data-d="-1" aria-label="اليوم السابق">'+I.chevR+'</button>'+
+    '<label class="dn-mid"><span id="dlabel"></span><span class="tag" id="dtag">النهارده</span><input type="date" id="dpick" aria-label="اختيار التاريخ"></label>'+
+    '<button type="button" class="dn-btn" data-act="day" data-d="1" aria-label="اليوم التالي">'+I.chevL+'</button>'+
+    '<button type="button" class="btn sm" id="dtoday" data-act="today">رجوع للنهارده</button>'+
+  '</div><div class="stats" id="astats"></div></div>'+
+  '<div class="searchbar" id="sbar" hidden><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="اكتب جزء من اسم الطالب" aria-label="بحث عن طالب"><button type="button" class="btn" data-act="qclose">إغلاق البحث</button></div>'+
+  '<div id="agrid"></div>';
+UPDATE.att=()=>{
+  renderBanner();
+  const g=curGroup(),gridEl=$("#agrid");if(!gridEl)return;
+  $("#ahead").hidden=!g;
+  if(!g){gridEl.className="";gridEl.innerHTML=welcomeHtml();return}
+  const isToday=S.date===todayStr();
+  $("#dlabel").textContent=fmtDay.format(parseD(S.date))+" "+ar(S.date.slice(0,4));
+  $("#dtag").hidden=!isToday;$("#dtoday").hidden=isToday;
+  const dp=$("#dpick");if(dp.value!==S.date)dp.value=S.date;
+  $("#sbar").hidden=!S.search;
+  const list=roster(g.id);
+  if(!list.length){$("#astats").innerHTML="";gridEl.className="";gridEl.innerHTML='<div class="empty"><h2>المجموعة دي لسه مفيهاش طلاب</h2><div>ضيف الأسماء مرة واحدة من شاشة الطلاب.</div><button type="button" class="btn primary" data-act="screen" data-s="stu">'+I.stu+'إضافة الطلاب</button></div>';return}
+  const dm=dayMap(g.id,S.date);
+  const present=list.filter(s=>dm[s.id]===1).length,absent=list.length-present,pct=Math.round(present/list.length*100);
+  $("#astats").innerHTML=
+    '<div class="stat"><span>الطلاب</span><b>'+ar(list.length)+'</b></div>'+
+    '<div class="stat ok"><span>حاضر</span><b id="sPres">'+ar(present)+'</b></div>'+
+    '<div class="stat bad"><span>غائب</span><b id="sAbs">'+ar(absent)+'</b></div>'+
+    '<div class="stat wide"><span>نسبة الحضور</span><b id="sPct">'+ar(pct)+'٪</b><div class="meter"><i id="sBar" style="width:'+pct+'%"></i></div></div>';
+  const qn=norm(S.q),shown=qn?list.filter(s=>norm(s.n).indexOf(qn)>=0):list;
+  const abs=(core().set||{}).showAbs===0?null:absentCounts(g.id,S.date);
+  let h="";
+  if(!shown.length)h='<div class="empty">مفيش اسم بالشكل ده في المجموعة.</div>';
+  shown.forEach(s=>{
+    const on=dm[s.id]===1,idx=list.indexOf(s)+1,c=abs&&abs[s.id];
+    h+='<button type="button" class="card'+(on?' on':'')+'" data-act="tog" data-id="'+s.id+'" aria-pressed="'+on+'"><span class="no">'+ar(idx)+'</span><span class="tx"><span class="nm">'+esc(s.n)+'</span>'+(c?'<span class="ab">غاب '+times(c)+' الشهر ده</span>':'')+'</span><span class="ck">'+I.check+'</span></button>';
+  });
+  gridEl.className=shown.length?"grid":"";
+  setHTML(gridEl,h);
+};
+function welcomeHtml(){
+  return '<div class="empty"><h2>ابدأ بأول مجموعة</h2><div>اختار اسم جاهز أو اكتب اسمك من شاشة الطلاب.</div><div class="quick">'+
+    QUICK_GROUPS.map(n=>'<button type="button" class="btn" data-act="quickgroup" data-n="'+esc(n)+'">'+esc(n)+'</button>').join("")+
+    '</div><button type="button" class="btn primary" data-act="newgroup">'+I.plus+'اسم تاني</button></div>';
+}
+const QUICK_GROUPS=["أولى ثانوي","تانية ثانوي","تالتة ثانوي","أولى إعدادي","تانية إعدادي","تالتة إعدادي"];
+function renderBanner(){
+  const b=$("#banner");if(!b)return;let h="";
+  if(NATIVE){
+    const last=LS.get("k2:lastbk"),hasData=allStudents().length>0,days=last?Math.floor((Date.now()-last)/864e5):null;
+    if(S.screen!=="att"&&hasData&&(days===null||days>=7))h='<div class="banner"><span>'+(days===null?"لسه معملتش نسخة احتياطية.":"آخر نسخة احتياطية من "+ar(days)+" يوم.")+' البيانات على الجهاز ده بس، ولو التطبيق اتمسح هتضيع.</span><button type="button" class="btn sm" data-act="export">نسخة احتياطية دلوقتي</button></div>';
+  }
+  else if(Sync.be&&Sync.be.kind==="local")h='<div class="banner"><span>انت مش مسجل دخول بحسابك في Claude على الجهاز ده، فالبيانات بتتحفظ هنا بس ومش هتظهر على أجهزتك التانية.</span></div>';
+  else if(Sync.fatal)h='<div class="banner"><span>تعديل اترفض من السحابة ('+esc(Sync.fatal.code||"")+'). باقي التعديلات شغالة. لو اتكرر، اعمل نسخة احتياطية من الإعدادات.</span><button type="button" class="btn sm" data-act="dismissfatal">تمام</button></div>';
+  setHTML(b,h);
+}
+function toggleStudent(sid){
+  const g=curGroup();if(!g)return;
+  const n=attName(g.id,S.date),dd=S.date.slice(8),dm=dayMap(g.id,S.date);
+  const prev=dm[sid]===1?1:0,next=prev?0:1;
+  const el=document.querySelector('.card[data-id="'+sid+'"]');
+  if(el){el.classList.toggle("on",!!next);el.setAttribute("aria-pressed",String(!!next))}
+  write(n,{d:{[dd]:{[sid]:next}}});
+  const st=student(sid);
+  pushUndo("att",{label:(next?"حضور ":"إلغاء حضور ")+(st?st.n:""),n:n,p:{d:{[dd]:{[sid]:prev}}},date:S.date,gid:g.id});
+}
+
+/* ---------------- students ---------------- */
+MOUNT.stu=()=>
+  '<div id="banner"></div><div id="shead"></div>'+
+  '<form class="addbar" data-form="addstu" id="addbar"><input id="newStu" name="n" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="اسم الطالب الجديد" aria-label="اسم الطالب"><button class="btn primary" type="submit">'+I.plus+'إضافة</button><button type="button" class="btn" data-act="bulk">لصق قائمة أسماء</button></form>'+
+  '<div id="slist"></div>';
+UPDATE.stu=()=>{
+  renderBanner();
+  const g=curGroup(),head=$("#shead"),lst=$("#slist");if(!head)return;
+  $("#addbar").hidden=!g;
+  if(!g){head.innerHTML="";lst.innerHTML=welcomeHtml();return}
+  const list=roster(g.id),manual=((core().groups||{})[g.id]||{}).s==="m";
+  const hh='<div class="bar"><div class="grow"><h2 class="title">'+esc(g.n)+'</h2><div class="sub">'+ar(list.length)+' طالب</div></div>'+
+    '<div class="seg" role="group" aria-label="الترتيب"><button type="button" data-act="sort" data-v="a" aria-pressed="'+!manual+'">ترتيب أبجدي</button><button type="button" data-act="sort" data-v="m" aria-pressed="'+manual+'">ترتيب يدوي</button></div>'+
+    '<button type="button" class="btn" data-act="editgroup">'+I.edit+'تعديل المجموعة</button></div>';
+  setHTML(head,hh);
+  let h="";
+  if(!list.length)h='<div class="empty">اكتب اسم أول طالب فوق ودوس إضافة، أو الصق قائمة الأسماء كلها مرة واحدة.</div>';
+  else{
+    h='<div class="rows">';
+    list.forEach((s,i)=>{
+      h+='<div class="row"><span class="no">'+ar(i+1)+'</span><button type="button" class="who" data-act="student" data-id="'+s.id+'" style="border:none;background:none;text-align:start;padding:.3rem 0;min-height:3rem"><b>'+esc(s.n)+'</b>'+(s.ph?'<small dir="ltr" style="text-align:end">'+esc(s.ph)+'</small>':'<small>اضغط للتفاصيل والسجل</small>')+'</button>'+
+        (manual?'<button type="button" class="ibtn" data-act="mv" data-d="-1" data-id="'+s.id+'" aria-label="لفوق"'+(i===0?' disabled':'')+'>'+I.up+'</button><button type="button" class="ibtn" data-act="mv" data-d="1" data-id="'+s.id+'" aria-label="لتحت"'+(i===list.length-1?' disabled':'')+'>'+I.down+'</button>':'')+
+        '<button type="button" class="ibtn" data-act="student" data-id="'+s.id+'" aria-label="تعديل">'+I.edit+'</button></div>';
+    });
+    h+='</div>';
+  }
+  const del=allStudents().filter(s=>s.x&&s.g===g.id);
+  if(del.length){
+    h+='<details class="del"'+(S.showDel?' open':'')+' id="deldet"><summary>المحذوفين من المجموعة دي ('+ar(del.length)+') — سجلاتهم محفوظة</summary><div class="rows">';
+    del.forEach(s=>{h+='<div class="row"><span class="who"><b>'+esc(s.n)+'</b></span><button type="button" class="btn sm" data-act="restore" data-id="'+s.id+'">استرجاع</button></div>'});
+    h+='</div></details>';
+  }
+  setHTML(lst,h);
+};
+function nextOrder(gid){let m=0;allStudents().forEach(s=>{if(s.g===gid&&(s.o||0)>m)m=s.o||0});return m+1}
+function addStudents(names){
+  const g=curGroup();if(!g)return 0;let o=nextOrder(g.id);const patch={students:{}};const c=todayStr();
+  names.forEach(n=>{patch.students[rid(8)]={n:n,g:g.id,ph:"",o:o++,x:0,c:c}});
+  write("core",patch);return names.length;
+}
+function moveStudent(sid,dir){
+  const g=curGroup();if(!g)return;const list=roster(g.id);const i=list.findIndex(s=>s.id===sid),j=i+dir;
+  if(i<0||j<0||j>=list.length)return;
+  const p={students:{}};list.forEach((s,k)=>{let o=k+1;if(k===i)o=j+1;else if(k===j)o=i+1;if(s.o!==o)p.students[s.id]={o:o}});
+  write("core",p);
+}
+function setSort(mode){
+  const g=curGroup();if(!g)return;const p={groups:{[g.id]:{s:mode}}};
+  if(mode==="m"){const list=roster(g.id);p.students={};list.forEach((s,k)=>{p.students[s.id]={o:k+1}})}
+  write("core",p);
+}
+function createGroup(name){
+  const gs=groupsList();const id=rid(8);const o=gs.reduce((m,g)=>Math.max(m,g.o||0),0)+1;
+  write("core",{groups:{[id]:{n:name,s:"a",o:o,x:0}}});S.gid=id;LS.set("k2:ui",{gid:id});return id;
+}
+
+/* ---------------- finance ---------------- */
+MOUNT.fin=()=>'<div id="banner"></div><div id="fwrap"></div>';
+UPDATE.fin=()=>{
+  renderBanner();
+  const w=$("#fwrap");if(!w)return;
+  if(!F.key){
+    if(!S.pp){
+      if(!hasPin()&&!(D("keys").known||D("keys").cached)){setHTML(w,'<div class="empty">بيحمّل…</div>');return}
+      S.pp=hasPin()?newPP("unlock"):null;
+    }
+    if(!S.pp){
+      w.innerHTML='<div class="lockwrap"><div class="lockcard"><div class="lk">'+I.lock+'</div><h2>الحسابات محمية برمز</h2>'+
+        '<div class="note">اختار رمز من ٤ أرقام. المبالغ هتتشفّر بيه قبل ما تتحفظ، ومش هتظهر على شاشة الحضور ولا لأي حد من غير الرمز.</div>'+
+        '<button type="button" class="btn primary" data-act="pinsetup">'+I.lock+'إنشاء رمز الحسابات</button></div></div>';
+      return;
+    }
+    if(!$("#ppcard"))setHTML(w,'<div class="lockwrap"><div class="lockcard" id="ppcard">'+ppHtml(S.pp)+'</div></div>');
+    return;
+  }
+  const g=curGroup();
+  if(!g){w.innerHTML='<div class="empty">اعمل مجموعة وضيف طلاب الأول.</div>';return}
+  const months=finMonths();
+  if(S.fin.mid&&!F.pending.size&&!months.some(m=>m.id===S.fin.mid))S.fin.mid=null;
+  if(!S.fin.mid&&months.length)S.fin.mid=months[months.length-1].id;
+  const list=roster(g.id),gf=gFee(g.id),mid=S.fin.mid;
+  let h='<div class="fbar"><button type="button" class="btn" data-act="gfee">اشتراك المجموعة: <b>'+(gf?money(gf):"مش محدد")+'</b></button>'+
+    '<div class="mchips">'+months.map(m=>'<button type="button" class="mchip" data-act="month" data-id="'+m.id+'" aria-pressed="'+(m.id===mid)+'">'+esc(m.n)+'</button>').join("")+
+    '<button type="button" class="mchip add" data-act="newmonth">+ شهر جديد</button></div></div>';
+  if(!months.length){w.innerHTML=h+'<div class="empty"><h2>ابدأ بأول شهر</h2><div>كل شهر بتعمله بيظهر عمود جديد قدام كل الطلاب.</div><div class="quick">'+monthQuick()+'</div></div>';return}
+  if(!list.length){w.innerHTML=h+'<div class="empty">المجموعة دي مفيهاش طلاب.</div>';return}
+  let col=0,exp=0,paid=0,part=0,none=0;
+  list.forEach(s=>{const f=feeOf(s),p=payOf(mid,s.id),st=payState(p,f);exp+=f;if(p)col+=p.a||0;if(st==="paid")paid++;else if(st==="part")part++;else none++});
+  const late=part+none;
+  h+='<div class="atthead"><div class="stats" style="margin-inline-start:0">'+
+    '<div class="stat ok"><span>دفعوا</span><b>'+ar(paid)+'</b></div>'+
+    '<div class="stat bad"><span>متأخرين</span><b>'+ar(late)+'</b></div>'+
+    (part?'<div class="stat warn"><span>منهم دفع جزئي</span><b>'+ar(part)+'</b></div>':'')+
+    '<div class="stat wide"><span>المحصّل</span><b>'+money(col)+'</b></div>'+
+    '<div class="stat wide"><span>المتوقع</span><b>'+money(exp)+'</b></div>'+
+    '<div class="stat wide"><span>الباقي</span><b>'+money(Math.max(0,exp-col))+'</b></div></div>'+
+    '<div class="bar" style="margin:0;margin-inline-start:auto">'+
+    '<div class="seg" role="group" aria-label="طريقة التسجيل"><button type="button" data-act="fmode" data-v="tap" aria-pressed="'+(S.fin.mode==="tap")+'">ضغطة = دفع كامل</button><button type="button" data-act="fmode" data-v="amt" aria-pressed="'+(S.fin.mode==="amt")+'">ضغطة = كتابة مبلغ</button></div>'+
+    '<div class="seg" role="group" aria-label="عرض"><button type="button" data-act="ffilter" data-v="all" aria-pressed="'+(S.fin.filter==="all")+'">الكل</button><button type="button" data-act="ffilter" data-v="late" aria-pressed="'+(S.fin.filter==="late")+'">المتأخرين ('+ar(late)+')</button></div>'+
+    (late?'<button type="button" class="btn sm" data-act="copylate">'+I.copy+'نسخ أسماء المتأخرين</button>':'')+
+    '</div></div>';
+  const shown=S.fin.filter==="late"?list.filter(s=>payState(payOf(mid,s.id),feeOf(s))!=="paid"):list;
+  const narrow=window.innerWidth<760;
+  const tpl=narrow?'grid-template-columns:minmax(7.5rem,1fr) 5.4rem repeat('+months.length+',6.6rem)':'grid-template-columns:2.6rem minmax(14rem,1fr) 8rem repeat('+months.length+',minmax(8.5rem,11rem))';
+  h+='<div class="matrix"><div class="mrow mhead" style="'+tpl+'">'+(narrow?'':'<span class="mno">#</span>')+'<span class="mname">الطالب</span><span style="justify-content:center">الاشتراك</span>'+
+    months.map(m=>'<button type="button" class="mhcell" data-act="month" data-id="'+m.id+'" aria-pressed="'+(m.id===mid)+'">'+esc(m.n)+'</button>').join("")+'</div>';
+  if(!shown.length)h+='<div class="empty" style="border:none">كل المجموعة دفعت الشهر ده.</div>';
+  shown.forEach(s=>{
+    const f=feeOf(s),custom=sFee(s.id)!=null;
+    h+='<div class="mrow" style="'+tpl+'">'+(narrow?'':'<span class="mno">'+ar(list.indexOf(s)+1)+'</span>')+'<span class="mname">'+esc(s.n)+'</span>'+
+      '<span><button type="button" class="fee'+(custom?' custom':'')+'" data-act="sfee" data-id="'+s.id+'">'+(f?money(f):"—")+'</button></span>';
+    months.forEach(m=>{
+      const p=payOf(m.id,s.id),st=payState(p,f);
+      let inner=st==="paid"?I.check+(p.a?'<small>'+money(p.a)+'</small>':''):st==="part"?'جزئي<small>'+money(p.a)+' من '+money(f)+'</small>':'لم يدفع'+(f?'<small>'+money(f)+'</small>':'');
+      h+='<span><button type="button" class="pc '+(st==="paid"?"paid":st==="part"?"part":"")+(m.id===mid&&months.length>1?" sel":"")+'" data-act="pay" data-mid="'+m.id+'" data-id="'+s.id+'" aria-label="'+esc(s.n+" "+m.n)+'">'+inner+'</button></span>';
+    });
+    h+='</div>';
+  });
+  h+='</div>';
+  setHTML(w,h);
+};
+function monthQuick(){
+  const now=new Date(),cur=now.getMonth();const order=[];for(let i=-1;i<11;i++)order.push((cur+i+12)%12);
+  return order.map(i=>'<button type="button" class="btn" data-act="addmonth" data-n="'+MONTHS[i]+'">'+MONTHS[i]+'</button>').join("");
+}
+function uniqueMonthName(n){const names=finMonths().map(m=>m.n);if(names.indexOf(n)<0)return n;let y=new Date().getFullYear();let c=n+" "+ar(y);while(names.indexOf(c)>=0){y++;c=n+" "+ar(y)}return c}
+async function addMonth(name){
+  const id="m"+rid(7);await setFin("mo",id,{n:uniqueMonthName(name),o:Date.now(),x:0});S.fin.mid=id;syncWanted();
+}
+async function tapPay(mid,sid){
+  const s=student(sid);if(!s)return;const f=feeOf(s),p=payOf(mid,sid),st=payState(p,f);
+  if(S.fin.mode==="amt"){openAmount({title:s.n,sub:"المبلغ المدفوع — "+monthName(mid),val:p?String(p.a||""):"",fee:f,kind:"pay",mid:mid,sid:sid});return}
+  const next=st==="paid"?null:{a:f,p:1,d:todayStr()};
+  const prev=p?clone(p):null;
+  await setPay(mid,sid,next);
+  pushUndo("fin",{label:s.n,mid:mid,sid:sid,prev:prev});
+}
+function monthName(mid){const m=finMonths().find(x=>x.id===mid);return m?m.n:""}
+
+/* legacy (v1) finance data → encrypted, done once after the PIN exists */
+async function migrateLegacyFinance(){
+  const L=Sync.legacy;if(!L||finV().lg)return;
+  const gf=L.fees||{},months=L.pay||{};
+  for(const gid of Object.keys(gf))if(gf[gid])await setFin("gf",gid,gf[gid]);
+  const mks=Object.keys(months).sort();let o=1;
+  for(const mk of mks){
+    const entries=months[mk];if(!entries||!Object.keys(entries).length)continue;
+    const id="m"+rid(7),mm=Number(mk.slice(5,7))-1;
+    await setFin("mo",id,{n:MONTHS[mm]+" "+ar(mk.slice(0,4)),o:o++,x:0});
+    const p={e:{}};for(const sid of Object.keys(entries)){const e=entries[sid];p.e[sid]=await encVal({a:Number(e.a)||0,p:1,d:e.d||""})}
+    write("fp-"+id,p);
+  }
+  write("fin",{lg:1});
+  scrubLegacyLater();
+}
+async function scrubLegacyLater(){
+  for(let i=0;i<40&&Sync.outbox.length;i++)await sleep(500);
+  if(Sync.outbox.length)return;
+  const L=Sync.legacy;if(!L)return;
+  try{
+    if(L.cloudMain){const m=clone(L.cloudMain);(m.groups||[]).forEach(g=>{delete g.fee});await Sync.be.set("main",m)}
+    for(const mk of (L.cloudMonths||[])){const d=await Sync.be.get("m-"+mk);if(d&&d.pay){delete d.pay;await Sync.be.set("m-"+mk,d)}}
+  }catch(e){}
+  const lm=LS.get("kashf:main");if(lm&&lm.groups){lm.groups.forEach(g=>{delete g.fee});LS.set("kashf:main",lm)}
+  LS.keys("kashf:m-").forEach(k=>{const d=LS.get(k);if(d&&d.pay){delete d.pay;LS.set(k,d)}});
+  write("fin",{sc:1});
+  LS.del("k2:legacy:"+Sync.uid);Sync.legacy=null;
+}
+
+/* ---------------- PIN pad ---------------- */
+function digitsOrder(){const d=[1,2,3,4,5,6,7,8,9,0];if(DEV.shuffle){for(let i=d.length-1;i>0;i--){const j=crypto.getRandomValues(new Uint32Array(1))[0]%(i+1);[d[i],d[j]]=[d[j],d[i]]}}return d}
+function newPP(purpose,extra){
+  const pp=Object.assign({purpose:purpose,step:1,val:"",first:"",err:"",busy:false,order:digitsOrder()},extra||{});
+  pp.len=purpose==="recover"?12:4;return pp;
+}
+function ppText(pp){
+  const t={unlock:["افتح الحسابات","اكتب رمز الحسابات"],setup:pp.step===1?["رمز جديد","اختار ٤ أرقام سهل تفتكرها"]:["أكّد الرمز","اكتب نفس الأرقام تاني"],
+    change:pp.step===1?["تغيير الرمز","اكتب الرمز الجديد"]:["أكّد الرمز الجديد","اكتب نفس الأرقام تاني"],
+    recover:["كود الاسترجاع","اكتب الـ١٢ رقم اللي كتبتهم وقت إنشاء الرمز"]};
+  return t[pp.purpose]||["",""];
+}
+function ppHtml(pp){
+  const t=ppText(pp),f=pinFails();let lockedFor=f.until&&f.until>Date.now()?Math.ceil((f.until-Date.now())/1000):0;
+  let dots="";for(let i=0;i<pp.len;i++)dots+='<i class="'+(i<pp.val.length?"f":"")+'"></i>';
+  const o=pp.order,k=d=>'<button type="button" class="key" data-act="pp" data-k="'+d+'">'+ar(d)+'</button>';
+  return '<div class="lk">'+I.lock+'</div><h2>'+t[0]+'</h2><div class="sub">'+t[1]+'</div>'+
+    '<div class="dots'+(pp.len>4?" long":"")+'" id="ppdots">'+dots+'</div>'+
+    '<div class="pperr" id="pperr">'+(pp.busy?'<span style="color:var(--muted)">بيتحقق…</span>':lockedFor?"محاولات كتير غلط. استنى "+ar(lockedFor)+" ثانية":esc(pp.err))+'</div>'+
+    '<div class="keys">'+o.slice(0,9).map(k).join("")+'<button type="button" class="key fn" data-act="pp" data-k="clr">مسح</button>'+k(o[9])+'<button type="button" class="key fn" data-act="pp" data-k="del" aria-label="حذف رقم">'+I.back+'</button></div>'+
+    (pp.purpose==="unlock"?'<button type="button" class="btn ghost sm" data-act="pprecover">نسيت الرمز؟</button>':'')+
+    (pp.purpose==="unlock"&&!pp.inSheet||pp.forced?'':'<button type="button" class="btn ghost sm" data-act="ppcancel">'+(pp.purpose==="recover"?"رجوع":"إلغاء")+'</button>');
+}
+function pinFails(){return LS.get("k2:pinfail")||{n:0,until:0}}
+function renderPP(){
+  const host=S.pp&&S.pp.inSheet?$("#sheet .sheet"):$("#ppcard");
+  if(host)host.innerHTML=ppHtml(S.pp);
+}
+async function ppKey(k){
+  const pp=S.pp;if(!pp||pp.busy)return;
+  const f=pinFails();if(f.until>Date.now()&&(pp.purpose==="unlock"||pp.purpose==="recover")){renderPP();return}
+  if(k==="del")pp.val=pp.val.slice(0,-1);else if(k==="clr")pp.val="";else if(pp.val.length<pp.len)pp.val+=k;
+  pp.err="";renderPP();
+  if(pp.val.length<pp.len)return;
+  const v=pp.val;
+  if(pp.purpose==="unlock"||pp.purpose==="recover"){
+    pp.busy=true;renderPP();
+    const ok=await unlockWith(v,pp.purpose==="recover");
+    pp.busy=false;
+    if(!ok){const n=f.n+1;LS.set("k2:pinfail",{n:n,until:n>=5?Date.now()+30000*Math.pow(2,Math.min(6,n-5)):0});pp.val="";pp.err=pp.purpose==="recover"?"الكود ده مش صحيح":"الرمز غلط";renderPP();const d=$("#ppdots");if(d){d.classList.remove("shake");void d.offsetWidth;d.classList.add("shake")}return}
+    LS.set("k2:pinfail",{n:0,until:0});
+    if(pp.purpose==="recover"){S.pp=newPP("change",{forced:true,inSheet:pp.inSheet,relock:pp.then==="change"});renderPP();toast("اتفتح بكود الاسترجاع. اختار رمز جديد.");return}
+    afterUnlock(pp);return;
+  }
+  if(pp.step===1){pp.first=v;pp.val="";pp.step=2;renderPP();return}
+  if(v!==pp.first){pp.step=1;pp.first="";pp.val="";pp.err="الرقمين مش زي بعض، ابدأ تاني";renderPP();return}
+  pp.busy=true;renderPP();
+  if(pp.purpose==="setup"){
+    const r=await setupPin(v);
+    if(r.exists){S.pp=newPP("unlock");pp.busy=false;toast("فيه رمز اتعمل من جهاز تاني، افتح بيه");mountView();return}
+    S.pp=null;afterUnlock(pp);showRecovery(r.code);return;
+  }
+  if(pp.purpose==="change"){
+    await changePin(v);S.pp=null;if(pp.inSheet)closeSheet();
+    toast("الرمز اتغيّر على كل أجهزتك");
+    if(pp.relock){lockFin();updateAll();return}
+    if(!pp.inSheet){afterUnlock(null);return}
+    updateAll();return}
+}
+async function afterUnlock(pp){
+  bumpIdle();
+  if(pp&&pp.then==="change"){S.pp=newPP("change",{inSheet:true,relock:true});openSheetRaw({type:"pp",fin:true});return}
+  if(pp&&pp.inSheet)closeSheet();
+  S.pp=null;syncWanted();
+  await Promise.all(["fin"].concat(finMonths().map(m=>"fp-"+m.id)).map(n=>decryptDoc(n).catch(()=>{})));
+  if(Sync.legacy&&!finV().lg)await migrateLegacyFinance();
+  else if(finV().lg&&!finV().sc&&Sync.legacy)scrubLegacyLater();
+  if(S.screen==="fin")mountView();else updateAll();
+}
+
+/* ---------------- settings ---------------- */
+MOUNT.set=()=>'<div id="banner"></div><div class="panels" id="setp"></div>';
+UPDATE.set=()=>{
+  renderBanner();const p=$("#setp");if(!p)return;
+  const cloud=Sync.be&&Sync.be.kind==="cloud",showAbs=(core().set||{}).showAbs!==0;
+  const sw=(act,on)=>'<button type="button" class="switch" data-act="'+act+'" aria-pressed="'+on+'">'+(on?"شغال":"مقفول")+'</button>';
+  const sgrp=(act,opts,cur)=>'<div class="seg">'+opts.map(o=>'<button type="button" data-act="'+act+'" data-v="'+o[0]+'" aria-pressed="'+(cur===o[0])+'">'+o[1]+'</button>').join("")+'</div>';
+  const h=
+  (NATIVE?'<section class="panel"><h3>التخزين</h3>'+
+    '<div class="note">كل البيانات <b>محفوظة على الجهاز ده</b> (السبورة أو الموبايل) والتطبيق مش محتاج نت. مفيش مزامنة تلقائية بين الأجهزة.</div>'+
+    '<div class="note"><b>عشان تنقل البيانات بين السبورة والموبايل:</b> اعمل «تنزيل نسخة احتياطية» على جهاز وابعتها لنفسك على واتساب أو Drive، وبعدين اعمل «استرجاع من ملف» على الجهاز التاني. الاسترجاع بيدمج ومش بيمسح حاجة.</div>'+
+    '<div class="note"><b>مهم:</b> لو مسحت التطبيق أو بياناته من إعدادات أندرويد، البيانات هتضيع. اعمل نسخة احتياطية كل أسبوع.'+(LS.get("k2:lastbk")?' آخر نسخة: '+esc(new Date(LS.get("k2:lastbk")).toLocaleDateString("ar-EG")):'')+'</div>'+
+  '</section>':
+  '<section class="panel"><h3>المزامنة بين الأجهزة</h3>'+
+    '<div class="line"><div class="txt"><b>'+$("#sync").lastChild.textContent+'</b><span class="sub">'+(cloud?"كل تعديل بيوصل لأجهزتك التانية لحظيًا.":"مفيش حساب على الجهاز ده.")+'</span></div><button type="button" class="btn sm" data-act="syncnow">مزامنة الآن</button></div>'+
+    '<div class="note">'+(cloud?
+      'البيانات محفوظة في <b>السحابة على حسابك في Claude</b> (مساحة خاصة بيك، محدش غيرك يقدر يقراها حتى لو شاركت الرابط). كمان بتتحفظ نسخة على الجهاز، فلو النت قطع والتطبيق مفتوح تقدر تكمّل تسجيل، والتعديلات تتبعت لوحدها أول ما النت يرجع. افتح التطبيق على السبورة والموبايل بنفس حساب Claude.':
+      'التطبيق شغال من غير حساب، فالبيانات على الجهاز ده بس. لو مسحت بيانات المتصفح هتضيع. سجّل دخول بحسابك في Claude وافتح نفس الرابط عشان المزامنة تشتغل، والبيانات اللي هنا هتتنقل للسحابة لوحدها.')+'</div>'+
+    (Sync.outbox.length?'<div class="note">تعديلات مستنية تتبعت: <b>'+ar(Sync.outbox.length)+'</b></div>':'')+
+  '</section>')+
+  '<section class="panel"><h3>أمان الحسابات</h3>'+
+    '<div class="line"><div class="txt"><b>رمز الحسابات</b><span class="sub">'+(hasPin()?"متفعّل — المبالغ متشفّرة":"لسه متعملش")+'</span></div>'+(hasPin()?'<button type="button" class="btn sm" data-act="pinchange">تغيير الرمز</button>':'<button type="button" class="btn sm primary" data-act="gofin">إنشاء رمز</button>')+'</div>'+
+    '<div class="line"><div class="txt"><b>قفل تلقائي لما أسيب شاشة الحسابات</b><span class="sub">بيتقفل كمان بعد ٣ دقايق من غير لمس.</span></div>'+sw("lockleave",DEV.lockOnLeave)+'</div>'+
+    '<div class="line"><div class="txt"><b>لخبطة أماكن الأرقام في لوحة الرمز</b><span class="sub">عشان اللي واقف قدام السبورة ميعرفش الرمز من مكان صباعك.</span></div>'+sw("shuffle",DEV.shuffle)+'</div>'+
+    '<div class="note">المبالغ بتتشفّر AES-256 بمفتاح مرتبط بالرمز قبل ما تتحفظ'+(NATIVE?'':' أو تخرج من الجهاز')+'. لو نسيت الرمز، افتح بـ«كود الاسترجاع» اللي ظهر لك وقت الإنشاء. من غير الاتنين محدش يقدر يفتحها، ولا حتى أنا.</div>'+
+  '</section>'+
+  '<section class="panel"><h3>شكل العرض (على الجهاز ده)</h3>'+
+    '<div class="line"><div class="txt"><b>حجم الكروت والخط</b></div>'+sgrp("size",[["s","أصغر"],["m","عادي"],["l","أكبر"]],DEV.size)+'</div>'+
+    '<div class="line"><div class="txt"><b>الألوان</b></div>'+sgrp("theme",[["light","فاتح"],["dark","غامق"],["auto","تلقائي"]],DEV.theme)+'</div>'+
+    '<div class="line"><div class="txt"><b>عدد مرات الغياب على كارت الطالب</b><span class="sub">بيظهر على كل أجهزتك.</span></div>'+sw("showabs",showAbs)+'</div>'+
+  '</section>'+
+  '<section class="panel"><h3>نسخة احتياطية</h3>'+
+    '<div class="note">ملف واحد فيه الطلاب والمجموعات وكل الحضور، والحسابات بشكلها المتشفّر (محتاجة نفس الرمز). الاسترجاع بيدمج النسخة مع بياناتك الحالية ومش بيمسح حاجة.</div>'+
+    '<div class="acts" style="display:flex;gap:.6rem;flex-wrap:wrap"><button type="button" class="btn primary" data-act="export">تنزيل نسخة احتياطية</button>'+
+    '<label class="btn" style="position:relative">استرجاع من ملف<input type="file" id="impfile" accept=".json,application/json" style="position:absolute;inset:0;opacity:0;width:100%"></label></div>'+
+  '</section>';
+  setHTML(p,h);
+};
+
+/* =====================================================================
+   Sheets (in-page panels)
+   ===================================================================== */
+function openSheetRaw(s){S.sheet=s;renderSheet()}
+function closeSheet(){S.sheet=null;if(S.pp&&S.pp.inSheet)S.pp=null;$("#sheet").innerHTML=""}
+function renderSheet(){
+  const s=S.sheet,host=$("#sheet");if(!s){host.innerHTML="";return}
+  let h="",wide=false;
+  if(s.type==="pp"){h=ppHtml(S.pp)}
+  else if(s.type==="group"){
+    const g=s.id?(core().groups||{})[s.id]:null;
+    h='<h2>'+(g?"تعديل المجموعة":"مجموعة جديدة")+'</h2>'+(g?'':'<div class="chipset">'+QUICK_GROUPS.map(n=>'<button type="button" class="btn sm" data-act="fillname" data-n="'+esc(n)+'">'+esc(n)+'</button>').join("")+'</div>')+
+      '<form data-form="group" data-id="'+(s.id||"")+'"><div class="field"><label for="gName">اسم المجموعة</label><input id="gName" name="n" maxlength="60" required value="'+esc(g?g.n:"")+'" placeholder="مثال: أولى ثانوي — سبت وتلات"></div>'+
+      '<div class="acts" style="margin-top:1rem"><button class="btn primary" type="submit">حفظ</button><button type="button" class="btn" data-act="close">إلغاء</button>'+(g?'<button type="button" class="btn danger" data-act="delgroup" data-id="'+s.id+'">حذف المجموعة</button>':'')+'</div></form>';
+  }else if(s.type==="student"){
+    const st=student(s.id);if(!st){closeSheet();return}wide=true;
+    const gs=groupsList();
+    h='<h2>'+esc(st.n)+'</h2><form data-form="student" data-id="'+st.id+'">'+
+      '<div class="field"><label for="sName">الاسم</label><input id="sName" name="n" maxlength="80" required value="'+esc(st.n)+'"></div>'+
+      '<div class="field" style="margin-top:.8rem"><label for="sPh">رقم ولي الأمر (اختياري)</label><input id="sPh" name="ph" type="tel" inputmode="tel" dir="ltr" maxlength="20" value="'+esc(st.ph||"")+'"></div>'+
+      '<div class="field" style="margin-top:.8rem"><label>المجموعة (اضغط عشان تنقله)</label><div class="chipset">'+gs.map(g=>'<button type="button" class="gchip" data-act="pickg" data-id="'+g.id+'" aria-pressed="'+(g.id===(s.g||st.g))+'">'+esc(g.n)+'</button>').join("")+'</div></div>'+
+      '<div class="acts" style="margin-top:1rem"><button class="btn primary" type="submit">حفظ</button><button type="button" class="btn" data-act="close">إلغاء</button><button type="button" class="btn danger" data-act="delstu" data-id="'+st.id+'">حذف الطالب</button></div></form>'+
+      '<div id="hist">'+histHtml(st,s)+'</div>';
+  }else if(s.type==="bulk"){
+    h='<h2>لصق قائمة أسماء</h2><form data-form="bulk"><div class="field"><label for="bulkN">كل اسم في سطر (الأرقام في أول السطر بتتشال لوحدها)</label><textarea id="bulkN" name="names" required placeholder="أحمد محمد علي&#10;سارة محمود حسن"></textarea></div><div class="acts" style="margin-top:1rem"><button class="btn primary" type="submit">إضافة الكل</button><button type="button" class="btn" data-act="close">إلغاء</button></div></form>';
+  }else if(s.type==="amount"){
+    let quick="";if(s.fee){quick='<button type="button" class="btn sm" data-act="amtset" data-v="'+s.fee+'">كامل '+money(s.fee)+'</button><button type="button" class="btn sm" data-act="amtset" data-v="'+Math.round(s.fee/2)+'">النص '+money(Math.round(s.fee/2))+'</button>'}
+    if(s.kind==="sfee")quick='<button type="button" class="btn sm" data-act="amtgroup">زي المجموعة ('+money(s.groupFee||0)+')</button>';
+    const o=[1,2,3,4,5,6,7,8,9,0],k=d=>'<button type="button" class="key" data-act="amtk" data-k="'+d+'">'+ar(d)+'</button>';
+    h='<h2>'+esc(s.title)+'</h2><div class="sub">'+esc(s.sub||"")+'</div><div class="amount" id="amtv">'+(s.val?money(Number(s.val)):'<span class="sub">٠ ج</span>')+'</div>'+
+      (quick?'<div class="chipset" style="justify-content:center">'+quick+'</div>':'')+
+      '<div class="keys">'+o.slice(0,9).map(k).join("")+'<button type="button" class="key fn" data-act="amtk" data-k="clr">مسح</button>'+k(0)+'<button type="button" class="key fn" data-act="amtk" data-k="del" aria-label="حذف رقم">'+I.back+'</button></div>'+
+      '<div class="acts"><button type="button" class="btn primary" data-act="amtsave">حفظ</button>'+(s.kind==="pay"&&payOf(s.mid,s.sid)?'<button type="button" class="btn danger" data-act="amtnone">لم يدفع</button>':'')+'<button type="button" class="btn" data-act="close">إلغاء</button></div>';
+  }else if(s.type==="monthnew"){
+    wide=true;h='<h2>شهر جديد</h2><div class="quick" style="justify-content:flex-start">'+monthQuick()+'</div><form data-form="monthname"><div class="field"><label for="mName">أو اكتب اسم</label><input id="mName" name="n" maxlength="30" placeholder="مثال: ترم أول"></div><div class="acts" style="margin-top:1rem"><button class="btn primary" type="submit">إضافة</button><button type="button" class="btn" data-act="close">إلغاء</button></div></form>';
+  }else if(s.type==="monthedit"){
+    const m=finMonths().find(x=>x.id===s.id);if(!m){closeSheet();return}
+    h='<h2>'+esc(m.n)+'</h2><form data-form="monthrename" data-id="'+m.id+'"><div class="field"><label for="mrName">اسم الشهر</label><input id="mrName" name="n" maxlength="30" required value="'+esc(m.n)+'"></div><div class="acts" style="margin-top:1rem"><button class="btn primary" type="submit">حفظ</button><button type="button" class="btn" data-act="close">إلغاء</button><button type="button" class="btn danger" data-act="delmonth" data-id="'+m.id+'">حذف الشهر</button></div></form>';
+  }else if(s.type==="confirm"){
+    h='<h2>'+esc(s.title)+'</h2><div class="sub">'+esc(s.msg)+'</div><div class="acts"><button type="button" class="btn danger fill" data-act="confirmyes">'+esc(s.yes)+'</button><button type="button" class="btn" data-act="close">إلغاء</button></div>';
+  }else if(s.type==="text"){
+    h='<h2>'+esc(s.title||"انسخ النص")+'</h2><div class="field"><label for="copyBox">النسخ التلقائي مش متاح هنا. علّم على النص وانسخه.</label><textarea id="copyBox" readonly>'+esc(s.text)+'</textarea></div><div class="acts"><button type="button" class="btn" data-act="close">تمام</button></div>';
+  }else if(s.type==="recovery"){
+    h='<h2>كود الاسترجاع</h2><div class="sub">اكتبه في ورقة واحفظها بعيد عن السبورة. لو نسيت الرمز، الكود ده هو الطريقة الوحيدة لفتح الحسابات. مش هيظهر تاني.</div><div class="code">'+ar(s.code.replace(/(\d{4})(?=\d)/g,"$1 "))+'</div><div class="acts"><button type="button" class="btn primary" data-act="close">كتبته</button></div>';
+  }else if(s.type==="import"){
+    h='<h2>استرجاع النسخة؟</h2><div class="sub">'+esc(s.summary)+'</div><div class="note">هتتدمج مع بياناتك الحالية. اللي موجود ومش في النسخة هيفضل زي ما هو.</div><div class="acts"><button type="button" class="btn primary" data-act="importyes">استرجاع</button><button type="button" class="btn" data-act="close">إلغاء</button></div>';
+  }else if(s.type==="syncinfo"){
+    h='<h2>المزامنة</h2><div class="sub">'+esc($("#sync").lastChild.textContent)+'</div><div class="note">'+(Sync.be&&Sync.be.kind==="cloud"?"كل ضغطة بتتحفظ على الجهاز فورًا وتتبعت للسحابة، والأجهزة التانية المفتوحة بتستقبلها لحظيًا. لو النت قطع، التعديلات بتستنى وتتبعت لوحدها.":(NATIVE?"البيانات محفوظة على الجهاز ده ومش محتاجة نت. عشان تنقلها لجهاز تاني استخدم النسخة الاحتياطية من الإعدادات.":"الجهاز ده مش مسجل دخول بحساب Claude، فالبيانات هنا بس."))+'</div>'+(Sync.outbox.length?'<div class="note">مستني يتبعت: <b>'+ar(Sync.outbox.length)+'</b> تعديل</div>':'')+'<div class="acts"><button type="button" class="btn primary" data-act="syncnow">مزامنة الآن</button><button type="button" class="btn" data-act="close">تمام</button></div>';
+  }
+  host.innerHTML='<div class="ov" data-act="ovclose"><div class="sheet'+(wide?" wide":"")+'" role="dialog" aria-modal="true">'+h+'</div></div>';
+}
+function histHtml(st,s){
+  const mk=s.hm||S.date.slice(0,7);const data=s.hdata;
+  let h='<div class="bar" style="margin:1.2rem 0 .6rem"><h3 style="margin:0;font-family:var(--display)" class="grow">سجل الحضور</h3><button type="button" class="dn-btn" data-act="hm" data-d="-1" aria-label="الشهر السابق">'+I.chevR+'</button><b>'+esc(fmtMonthY.format(parseD(mk+"-01")))+'</b><button type="button" class="dn-btn" data-act="hm" data-d="1" aria-label="الشهر التالي">'+I.chevL+'</button></div>';
+  if(!data)return h+'<div class="sub">بيحمّل…</div>';
+  const pres=[],absn=[];
+  Object.keys(data).sort().forEach(dd=>{const v=data[dd];if(v===1)pres.push(dd);else if(v===0)absn.push(dd)});
+  if(!pres.length&&!absn.length)return h+'<div class="sub">مفيش حصص متسجلة له في الشهر ده.</div>';
+  const tot=pres.length+absn.length;
+  h+='<div class="sub" style="margin-bottom:.6rem">حضر '+times(pres.length)+'، غاب '+times(absn.length)+' — نسبة الحضور '+ar(Math.round(pres.length/tot*100))+'٪</div><div class="days">';
+  Object.keys(data).sort().forEach(dd=>{if(data[dd]===1||data[dd]===0)h+='<span class="'+(data[dd]===1?"p":"a")+'" title="'+(data[dd]===1?"حاضر":"غائب")+'">'+ar(Number(dd))+'</span>'});
+  return h+'</div>';
+}
+async function loadHistory(){
+  const s=S.sheet;if(!s||s.type!=="student")return;const st=student(s.id);if(!st)return;
+  const mk=s.hm||S.date.slice(0,7);s.hdata=null;
+  const gids=Object.keys(core().groups||{});const out={};
+  for(const gid of gids){
+    const n="a-"+gid+"-"+mk;let v=D(n).unsub&&D(n).known?view(n):null;
+    if(!v){try{v=await withTimeout(Sync.be.get(n),8000);if(v)LS.set(ckey(n),{d:v})}catch(e){const c=LS.get(ckey(n));v=c?c.d:null}}
+    const d=v&&v.d;if(!d)continue;
+    for(const dd of Object.keys(d)){const m=d[dd];if(!Object.keys(m).some(k=>m[k]===1))continue;
+      const x=m[st.id];if(x===1)out[dd]=1;else if(out[dd]!==1&&gid===st.g&&(!st.c||st.c<=mk+"-"+dd))out[dd]=0}
+  }
+  if(S.sheet===s&&(s.hm||S.date.slice(0,7))===mk){s.hdata=out;const el=$("#hist");if(el)el.innerHTML=histHtml(st,s)}
+}
+function openAmount(o){openSheetRaw(Object.assign({type:"amount",fin:true},o))}
+function showRecovery(code){openSheetRaw({type:"recovery",code:code,fin:true})}
+
+/* toast */
+let toastT=null;
+function toast(msg,undo){
+  $("#toastMsg").textContent=msg;S.toastUndo=undo||null;$("#toastBtn").hidden=!undo;$("#toast").hidden=false;
+  clearTimeout(toastT);toastT=setTimeout(()=>{$("#toast").hidden=true;S.toastUndo=null},undo?6000:2600);
+}
+function copyText(text,title){
+  const fail=()=>openSheetRaw({type:"text",text:text,title:title});
+  try{navigator.clipboard.writeText(text).then(()=>toast("اتنسخ. الصقه في واتساب أو أي مكان."),fail)}catch(e){fail()}
+}
+
+/* =====================================================================
+   Actions
+   ===================================================================== */
+async function doUndo(){
+  const scope=S.screen==="fin"?"fin":"att";const u=S.undo[scope].pop();if(!u){renderDock();return}
+  if(scope==="att"){
+    write(u.n,u.p);
+    if(u.date!==S.date||u.gid!==S.gid){S.date=u.date;S.gid=u.gid;syncWanted()}
+    toast("اترجعت: "+u.label);
+  }else{
+    if(u.kind==="sfee")await setFin("sf",u.sid,u.prev);
+    else await setPay(u.mid,u.sid,u.prev);
+    toast("اترجعت: "+u.label);
+  }
+  renderDock();
+}
+document.addEventListener("click",async ev=>{
+  const el=ev.target.closest("[data-act]");if(!el)return;
+  const a=el.dataset.act,id=el.dataset.id;
+  switch(a){
+    case "ovclose":if(ev.target===el&&!(S.sheet&&S.sheet.type==="recovery"))closeSheet();return;
+    case "close":closeSheet();return;
+    case "screen":setScreen(el.dataset.s);return;
+    case "group":S.gid=id;S.q="";LS.set("k2:ui",{gid:id});syncWanted();$("#view").scrollTop=0;if(S.screen==="fin"&&F.key)S.fin.filter="all";updateAll();return;
+    case "tog":toggleStudent(id);if(S.search&&S.q){S.q="";const q=$("#q");if(q){q.value="";q.focus()}}scheduleRender();return;
+    case "allpresent":{
+      const g=curGroup();if(!g)return;const list=roster(g.id),dm=dayMap(g.id,S.date),dd=S.date.slice(8),p={},inv={};
+      list.forEach(s=>{if(dm[s.id]!==1){p[s.id]=1;inv[s.id]=0}});
+      if(!Object.keys(p).length){toast("كل المجموعة متسجلة حاضر");return}
+      const n=attName(g.id,S.date);write(n,{d:{[dd]:p}});pushUndo("att",{label:"كله حاضر",n:n,p:{d:{[dd]:inv}},date:S.date,gid:g.id});
+      toast("اتسجل الكل حاضر. دوس على الغايب عشان ترجّعه.");return}
+    case "clearday":{
+      const g=curGroup();if(!g)return;const dm=dayMap(g.id,S.date),dd=S.date.slice(8),p={},inv={};
+      Object.keys(dm).forEach(k=>{if(dm[k]===1){p[k]=0;inv[k]=1}});
+      if(!Object.keys(p).length){toast("مفيش حضور متسجل في اليوم ده");return}
+      const n=attName(g.id,S.date);write(n,{d:{[dd]:p}});pushUndo("att",{label:"مسح اليوم",n:n,p:{d:{[dd]:inv}},date:S.date,gid:g.id});
+      toast("اتمسح حضور اليوم",()=>doUndo());return}
+    case "undo":doUndo();return;
+    case "toastundo":{const f=S.toastUndo;$("#toast").hidden=true;S.toastUndo=null;if(f)f();return}
+    case "search":S.search=!S.search;S.q="";updateAll();if(S.search){const q=$("#q");if(q){q.value="";q.focus()}}return;
+    case "qclose":{S.search=false;S.q="";const qq=$("#q");if(qq)qq.blur();updateAll();return}
+    case "day":{const d=parseD(S.date);d.setDate(d.getDate()+Number(el.dataset.d));S.date=ymd(d);syncWanted();updateAll();return}
+    case "today":S.date=todayStr();syncWanted();updateAll();return;
+    case "copyabs":{
+      const g=curGroup();if(!g)return;const dm=dayMap(g.id,S.date);const names=roster(g.id).filter(s=>dm[s.id]!==1).map((s,i)=>ar(i+1)+". "+s.n);
+      copyText("غياب "+g.n+" — "+fmtDay.format(parseD(S.date))+":\n"+(names.join("\n")||"مفيش غياب"));return}
+    case "quickgroup":createGroup(el.dataset.n);setScreen("stu");setTimeout(()=>{const i=$("#newStu");if(i)i.focus()},50);return;
+    case "newgroup":openSheetRaw({type:"group"});return;
+    case "editgroup":openSheetRaw({type:"group",id:S.gid});return;
+    case "fillname":{const i=$("#gName");if(i)i.value=el.dataset.n;return}
+    case "delgroup":{const g=(core().groups||{})[id];if(!g)return;const n=roster(id).length;
+      openSheetRaw({type:"confirm",title:"حذف مجموعة «"+g.n+"»؟",msg:n?"الـ"+ar(n)+" طالب وسجلاتهم هيتشالوا من القوائم بس هيفضلوا محفوظين.":"المجموعة فاضية.",yes:"احذف",fn:()=>{write("core",{groups:{[id]:{x:Date.now()}}});S.gid=null;curGroup();toast("اتحذفت المجموعة")}});return}
+    case "confirmyes":{const fn=S.sheet&&S.sheet.fn;closeSheet();if(fn)fn();updateAll();return}
+    case "sort":setSort(el.dataset.v);return;
+    case "mv":moveStudent(id,Number(el.dataset.d));return;
+    case "bulk":openSheetRaw({type:"bulk"});setTimeout(()=>{const t=$("#bulkN");if(t)t.focus()},30);return;
+    case "student":openSheetRaw({type:"student",id:id});loadHistory();return;
+    case "pickg":S.sheet.g=id;$$('.sheet [data-act="pickg"]').forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.id===id)));return;
+    case "hm":{const s=S.sheet;const d=parseD((s.hm||S.date.slice(0,7))+"-01");d.setMonth(d.getMonth()+Number(el.dataset.d));s.hm=ymd(d).slice(0,7);s.hdata=null;const h=$("#hist");const st=student(s.id);if(h&&st)h.innerHTML=histHtml(st,s);loadHistory();return}
+    case "delstu":{const st=student(id);if(!st)return;write("core",{students:{[id]:{x:Date.now()}}});closeSheet();toast("اتحذف "+st.n,()=>{write("core",{students:{[id]:{x:0}}})});return}
+    case "restore":write("core",{students:{[id]:{x:0}}});toast("رجع للمجموعة");return;
+    case "pinsetup":S.pp=newPP("setup");updateAll();return;
+    case "pp":ppKey(el.dataset.k);return;
+    case "pprecover":S.pp=newPP("recover",{inSheet:S.pp&&S.pp.inSheet});renderPP();return;
+    case "ppcancel":{const pp=S.pp,wasSheet=pp&&pp.inSheet;
+      if(pp&&pp.purpose==="recover"){S.pp=newPP("unlock",{inSheet:wasSheet,then:pp.then});renderPP();return}
+      S.pp=null;if(wasSheet)closeSheet();else updateAll();return}
+    case "lock":lockFin();mountView();toast("الحسابات اتقفلت");return;
+    case "month":{if(S.fin.mid===id){openSheetRaw({type:"monthedit",id:id,fin:true})}else{S.fin.mid=id;updateAll()}return}
+    case "newmonth":openSheetRaw({type:"monthnew",fin:true});return;
+    case "addmonth":await addMonth(el.dataset.n);closeSheet();updateAll();return;
+    case "delmonth":{const mid=id;openSheetRaw({type:"confirm",title:"حذف الشهر ده؟",msg:"العمود هيختفي. المدفوعات المسجلة فيه بتفضل محفوظة متشفّرة.",yes:"احذف",fin:true,fn:async()=>{const m=finMonths().find(x=>x.id===mid);if(m){await setFin("mo",mid,{n:m.n,o:m.o,x:Date.now()});S.fin.mid=null;updateAll()}}});return}
+    case "fmode":S.fin.mode=el.dataset.v;updateAll();return;
+    case "ffilter":S.fin.filter=el.dataset.v;updateAll();return;
+    case "pay":await tapPay(el.dataset.mid,id);return;
+    case "gfee":{const g=curGroup();if(!g)return;openAmount({title:"اشتراك المجموعة الشهري",sub:g.n+" — لكل طالب مالوش اشتراك خاص",val:String(gFee(g.id)||""),kind:"gfee",gid:g.id});return}
+    case "sfee":{const s=student(id);if(!s)return;const cur=sFee(id);openAmount({title:"اشتراك "+s.n,sub:"لو الطالب ده اشتراكه مختلف عن المجموعة",val:cur!=null?String(cur):"",kind:"sfee",sid:id,groupFee:gFee(s.g)});return}
+    case "amtk":{const s=S.sheet;if(!s)return;const k=el.dataset.k;if(k==="del")s.val=s.val.slice(0,-1);else if(k==="clr")s.val="";else if(s.val.length<7)s.val=(s.val==="0"?"":s.val)+k;$("#amtv").innerHTML=s.val?money(Number(s.val)):'<span class="sub">٠ ج</span>';return}
+    case "amtset":S.sheet.val=String(el.dataset.v);$("#amtv").innerHTML=money(Number(S.sheet.val));return;
+    case "amtgroup":{const s=S.sheet;const prev=sFee(s.sid);await setFin("sf",s.sid,null);pushUndo("fin",{kind:"sfee",label:"اشتراك خاص",sid:s.sid,prev:prev});closeSheet();updateAll();return}
+    case "amtnone":{const s=S.sheet;const prev=payOf(s.mid,s.sid);await setPay(s.mid,s.sid,null);pushUndo("fin",{label:"دفع",mid:s.mid,sid:s.sid,prev:prev?clone(prev):null});closeSheet();updateAll();return}
+    case "amtsave":{
+      const s=S.sheet;if(!s)return;const v=Math.max(0,Math.round(Number(s.val)||0));
+      if(s.kind==="gfee")await setFin("gf",s.gid,v);
+      else if(s.kind==="sfee"){const prev=sFee(s.sid);await setFin("sf",s.sid,v);pushUndo("fin",{kind:"sfee",label:"اشتراك خاص",sid:s.sid,prev:prev})}
+      else if(s.kind==="pay"){const prev=payOf(s.mid,s.sid);await setPay(s.mid,s.sid,v>0?{a:v,p:1,d:todayStr()}:null);pushUndo("fin",{label:"دفع",mid:s.mid,sid:s.sid,prev:prev?clone(prev):null})}
+      closeSheet();updateAll();return}
+    case "copylate":{const g=curGroup(),mid=S.fin.mid;if(!g||!mid)return;
+      const rows=roster(g.id).map(s=>{const f=feeOf(s),p=payOf(mid,s.id),st=payState(p,f);return st==="paid"?null:s.n+(f?" — باقي "+money(f-(p?p.a||0:0)):"")}).filter(Boolean);
+      copyText("متأخرين "+monthName(mid)+" — "+g.n+":\n"+rows.map((r,i)=>ar(i+1)+". "+r).join("\n"));return}
+    case "pinchange":
+      if(F.key){S.pp=newPP("change",{inSheet:true});openSheetRaw({type:"pp",fin:true})}
+      else{S.pp=newPP("unlock",{inSheet:true,then:"change"});openSheetRaw({type:"pp",fin:true})}
+      return;
+    case "gofin":setScreen("fin");return;
+    case "lockleave":DEV.lockOnLeave=!DEV.lockOnLeave;saveDev();updateAll();return;
+    case "shuffle":DEV.shuffle=!DEV.shuffle;saveDev();updateAll();return;
+    case "size":DEV.size=el.dataset.v;saveDev();applyTheme();updateAll();return;
+    case "theme":DEV.theme=el.dataset.v;saveDev();applyTheme();updateAll();return;
+    case "showabs":{const cur=(core().set||{}).showAbs!==0;write("core",{set:{showAbs:cur?0:1}});return}
+    case "syncnow":Sync.backoff=0;Sync.fatal=null;kick(0);Sync.want.forEach(n=>{if(!D(n).unsub)openDoc(n)});toast("بيزامن…");return;
+    case "syncinfo":openSheetRaw({type:"syncinfo",live:true});return;
+    case "dismissfatal":Sync.fatal=null;updateAll();return;
+    case "export":doExport();return;
+    case "importyes":{const s=S.sheet;closeSheet();doImport(s.data);return}
+  }
+});
+document.addEventListener("input",ev=>{
+  if(ev.target.id==="q"){S.q=ev.target.value;UPDATE.att()}
+});
+document.addEventListener("change",async ev=>{
+  if(ev.target.id==="dpick"&&ev.target.value){S.date=ev.target.value;syncWanted();updateAll()}
+  if(ev.target.id==="impfile"){const f=ev.target.files&&ev.target.files[0];ev.target.value="";if(f)readImport(f)}
+});
+document.addEventListener("toggle",ev=>{if(ev.target.id==="deldet")S.showDel=ev.target.open},true);
+document.addEventListener("submit",async ev=>{
+  const f=ev.target,kind=f.dataset.form;if(!kind)return;ev.preventDefault();
+  const fd=new FormData(f);
+  if(kind==="addstu"){
+    const n=String(fd.get("n")||"").trim().slice(0,80);if(!n)return;
+    addStudents([n]);const i=$("#newStu");if(i){i.value="";i.focus()}toast("اتضاف: "+n);return;
+  }
+  if(kind==="bulk"){
+    const lines=String(fd.get("names")||"").split(/\r?\n/).map(x=>x.replace(/^\s*[\d٠-٩]+\s*[-.)\/]?\s*/,"").trim().slice(0,80)).filter(Boolean);
+    if(!lines.length)return;addStudents(lines);closeSheet();toast("اتضاف "+ar(lines.length)+" طالب");return;
+  }
+  if(kind==="group"){
+    const n=String(fd.get("n")||"").trim();if(!n)return;
+    if(f.dataset.id)write("core",{groups:{[f.dataset.id]:{n:n}}});else{createGroup(n);if(S.screen==="att")setScreen("stu")}
+    closeSheet();updateAll();return;
+  }
+  if(kind==="student"){
+    const st=student(f.dataset.id);if(!st)return;const n=String(fd.get("n")||"").trim();if(!n)return;
+    const p={n:n,ph:String(fd.get("ph")||"").trim()};const ng=S.sheet&&S.sheet.g;
+    let moved=false;if(ng&&ng!==st.g&&(core().groups||{})[ng]){p.g=ng;p.o=nextOrder(ng);moved=true}
+    write("core",{students:{[st.id]:p}});closeSheet();
+    if(moved){const g=(core().groups||{})[ng];toast("اتنقل لـ "+(g?g.n:""))}return;
+  }
+  if(kind==="monthname"){const n=String(fd.get("n")||"").trim();if(!n)return;await addMonth(n);closeSheet();updateAll();return}
+  if(kind==="monthrename"){const m=finMonths().find(x=>x.id===f.dataset.id);const n=String(fd.get("n")||"").trim();if(!m||!n)return;await setFin("mo",m.id,{n:n,o:m.o,x:0});closeSheet();updateAll();return}
+});
+
+/* ---------------- backup ---------------- */
+async function allDocs(){
+  let list=[];try{list=await withTimeout(Sync.be.list(),20000)}catch(e){list=[]}
+  const out={};list.forEach(([n,d])=>{out[n]=d});
+  Object.keys(Sync.docs).forEach(n=>{const v=view(n);if(v)out[n]=v});
+  return out;
+}
+async function doExport(){
+  const docs=await allDocs();
+  const data=JSON.stringify({app:"kashf",v:2,at:new Date().toISOString(),docs:docs});
+  const name="kashf-backup-"+todayStr()+".json";
+  if(NATIVE){
+    const FS=Plug("Filesystem"),SH=Plug("Share");
+    if(FS){
+      let saved=false,uri=null;
+      try{await FS.writeFile({path:name,data:data,directory:"DOCUMENTS",encoding:"utf8",recursive:true});saved=true}catch(e){}
+      try{const r=await FS.writeFile({path:name,data:data,directory:"CACHE",encoding:"utf8"});uri=r.uri}catch(e){}
+      if(saved||uri){LS.set("k2:lastbk",Date.now());updateAll()}
+      if(saved)toast("اتحفظت في Documents باسم "+name);
+      if(uri&&SH){try{await SH.share({title:"نسخة احتياطية — كشف الغياب",files:[uri],dialogTitle:"ابعت النسخة لنفسك أو احفظها"})}catch(e){}}
+      if(saved||uri)return;
+    }
+  }
+  let dl=null;try{dl=await withTimeout(window.claude.use("downloads"),5000)}catch(e){}
+  if(dl){try{await dl.save({filename:name,data:data});LS.set("k2:lastbk",Date.now());toast("النسخة اتنزلت");return}catch(e){if(e&&e.code==="declined")return}}
+  openSheetRaw({type:"text",title:"انسخ النسخة الاحتياطية",text:data});
+}
+function readImport(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    let d;try{d=JSON.parse(String(r.result))}catch(e){toast("الملف ده مش نسخة احتياطية صالحة");return}
+    if(d&&d.app==="kashf"&&isObj(d.docs)){
+      const c=d.docs.core||{};const ng=Object.keys(c.groups||{}).length,ns=Object.keys(c.students||{}).length,na=Object.keys(d.docs).filter(n=>n.indexOf("a-")===0).length;
+      openSheetRaw({type:"import",data:d,summary:"فيها "+ar(ng)+" مجموعة و"+ar(ns)+" طالب وسجل حضور "+ar(na)+" شهر"+(d.docs.keys?"، والحسابات متشفّرة":"")+". اتعملت "+(d.at?new Date(d.at).toLocaleDateString("ar-EG"):"")});
+    }else if(d&&Array.isArray(d.groups)&&Array.isArray(d.students)){
+      openSheetRaw({type:"import",data:{app:"kashf",docs:{core:legacyToCore(d)}},summary:"ملف من النسخة القديمة فيه "+ar(d.groups.length)+" مجموعة و"+ar(d.students.length)+" طالب."});
+    }else toast("الملف ده مش نسخة احتياطية صالحة");
+  };
+  r.readAsText(file);
+}
+function doImport(d){
+  const docs=d.docs||{};const curKeys=keysDoc();let skippedFin=false;
+  const sameKey=!curKeys||!curKeys.wp||(docs.keys&&docs.keys.wr===curKeys.wr);
+  Object.keys(docs).forEach(n=>{
+    const v=docs[n];if(!isObj(v))return;
+    if(n==="main"||n.indexOf("m-")===0)return;
+    if(!/^[A-Za-z0-9_\-.~:@+]+$/.test(n))return;
+    if((n==="keys"||n==="fin"||n.indexOf("fp-")===0)&&!sameKey){skippedFin=true;return}
+    if(n==="keys"&&curKeys&&curKeys.wp)return;
+    write(n,v);
+  });
+  toast(skippedFin?"الطلاب والحضور رجعوا. الحسابات في النسخة برمز مختلف فمتدمجتش.":"النسخة اترجعت");
+  syncWanted();
+}
+
+/* =====================================================================
+   Boot & migration from v1
+   ===================================================================== */
+function legacyToCore(m){
+  const c={v:2,groups:{},students:{},set:{showAbs:1}};
+  (m.groups||[]).forEach((g,i)=>{if(g&&g.id)c.groups[g.id]={n:String(g.name||"مجموعة"),s:"a",o:i+1,x:0}});
+  (m.students||[]).forEach((s,i)=>{if(s&&s.id)c.students[s.id]={n:String(s.n||""),g:s.g,ph:s.ph||"",o:i+1,x:0,c:""}});
+  return c;
+}
+async function migrateIfNeeded(){
+  if(view("core"))return;
+  // 1) data this device saved while signed out → move to the account
+  if(Sync.be.kind==="cloud"){
+    const loc=LS.keys("k2:l:");
+    if(loc.length&&LS.get("k2:l:core")){loc.forEach(k=>{const v=LS.get(k);if(isObj(v))write(k.slice(5),v)});LS.set("k2:adopted:"+Sync.uid,1);return}
+  }
+  // 2) v1 data (cloud "main" + "m-YYYY-MM", or this device's localStorage "kashf:*")
+  let main=null,cloudMain=null,cloudMonths=[],months={};
+  if(Sync.be.kind==="cloud"){
+    try{cloudMain=await withTimeout(Sync.be.get("main"),10000)}catch(e){}
+    try{const all=await withTimeout(Sync.be.list(),15000);all.forEach(([n,d])=>{if(/^m-\d{4}-\d{2}$/.test(n)&&d){months[n.slice(2)]=d;cloudMonths.push(n.slice(2))}})}catch(e){}
+  }
+  main=cloudMain&&Array.isArray(cloudMain.groups)?cloudMain:null;
+  const lm=LS.get("kashf:main");
+  if(!main&&lm&&Array.isArray(lm.groups))main=lm;
+  LS.keys("kashf:m-").forEach(k=>{const mk=k.slice(8);if(!months[mk]){const d=LS.get(k);if(d)months[mk]=d}});
+  if(!main||!main.groups.length){write("core",{v:2,groups:{},students:{},set:{showAbs:1}});return}
+  const c=legacyToCore(main);write("core",c);
+  // v1 stored absentees per session; convert each recorded session to present/absent per student
+  Object.keys(months).forEach(mk=>{
+    const abs=(months[mk]||{}).abs||{};const byG={};
+    Object.keys(abs).forEach(dd=>{const day=abs[dd]||{};Object.keys(day).forEach(gid=>{
+      const ab=day[gid]||[];const m={};
+      Object.keys(c.students).forEach(sid=>{if(c.students[sid].g===gid)m[sid]=ab.indexOf(sid)>=0?0:1});
+      ab.forEach(sid=>{m[sid]=0});
+      (byG[gid]=byG[gid]||{})[dd]=m;
+    })});
+    Object.keys(byG).forEach(gid=>write("a-"+gid+"-"+mk,{d:byG[gid]}));
+  });
+  const fees={};(main.groups||[]).forEach(g=>{if(g&&g.fee)fees[g.id]=Number(g.fee)||0});
+  const pay={};Object.keys(months).forEach(mk=>{const p=(months[mk]||{}).pay;if(p&&Object.keys(p).length)pay[mk]=p});
+  if(Object.keys(fees).length||Object.keys(pay).length){
+    Sync.legacy={fees:fees,pay:pay,cloudMain:cloudMain,cloudMonths:cloudMonths};
+    LS.set("k2:legacy:"+Sync.uid,{fees:fees,pay:pay,cloudMonths:cloudMonths,hasCloudMain:!!cloudMain});
+  }
+}
+function waitKnown(n,ms){
+  return new Promise(res=>{const t0=Date.now();(function chk(){const d=D(n);if(d.known||Date.now()-t0>ms)return res(d.known);setTimeout(chk,60)})()});
+}
+async function boot(){
+  applyTheme();renderTabs();
+  const ui=LS.get("k2:ui")||{};S.gid=ui.gid||null;
+  let db=null,uid=null;
+  if(!NATIVE)for(let i=0;i<30&&!(window.claude&&typeof window.claude.use==="function");i++)await sleep(100);
+  if(!NATIVE&&window.claude&&typeof window.claude.use==="function"){
+    try{const r=await withTimeout(Promise.all([window.claude.use("db"),window.claude.use("user")]),12000);db=r[0];uid=r[1]?await withTimeout(r[1].id(),8000):null}catch(e){}
+  }
+  if(db&&uid){Sync.be=CloudBackend(db,uid);Sync.uid=uid}
+  else{Sync.be=LocalBackend();Sync.uid="local"}
+  Sync.outbox=LS.get(okey())||[];
+  const lg=LS.get("k2:legacy:"+Sync.uid);
+  if(lg){Sync.legacy={fees:lg.fees||{},pay:lg.pay||{},cloudMonths:lg.cloudMonths||[],cloudMain:null};if(lg.hasCloudMain){Sync.be.get("main").then(m=>{if(Sync.legacy)Sync.legacy.cloudMain=m}).catch(()=>{})}}
+  openDoc("core");openDoc("keys");
+  const hadCache=D("core").cached&&D("core").srv;
+  if(hadCache){S.ready=true;mountView()}
+  await waitKnown("core",hadCache?1500:10000);
+  if(!view("core")&&D("core").known)await migrateIfNeeded();
+  if(Sync.be.kind==="cloud"&&view("core")&&LS.get("k2:l:core")&&!LS.get("k2:adopted:"+Sync.uid)){
+    // signed-out edits on this device: merge them into the account once
+    LS.keys("k2:l:").forEach(k=>{const v=LS.get(k);if(isObj(v))write(k.slice(5),v)});LS.set("k2:adopted:"+Sync.uid,1);
+  }
+  S.ready=true;curGroup();mountView();kick(0);
+  setInterval(()=>{if(Sync.outbox.length&&!Sync.flushing)kick(0)},20000);
+}
+window.__kashf={S:S,Sync:Sync,F:F,view:view,NATIVE:NATIVE,importData:doImport};
+if(NATIVE){
+  const A=Plug("App");
+  if(A&&A.addListener)A.addListener("backButton",()=>{
+    if(S.sheet){if(S.sheet.type!=="recovery")closeSheet();return}
+    if(S.search){S.search=false;S.q="";updateAll();return}
+    if(S.screen!=="att"){setScreen("att");return}
+    if(A.exitApp)A.exitApp();
+  });
+}
+boot();
+})();
+</script>
+</body>
+</html>

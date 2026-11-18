@@ -1,0 +1,181 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["README.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERSION_NAME: "1.0.${{ github.run_number }}"
+  VERSION_CODE: "${{ github.run_number }}"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      signed: ${{ steps.sign.outputs.signed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - name: Signing key available?
+        id: sign
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_PASSWORD" ]; then echo "signed=true" >> "$GITHUB_OUTPUT"
+          else echo "signed=false" >> "$GITHUB_OUTPUT"; echo "::warning::KEYSTORE_PASSWORD secret is missing: release APK will not be signed or published"; fi
+
+      - name: Create Android project from www/
+        run: |
+          set -o pipefail
+          mkdir -p logs
+          npm install --no-audit --no-fund 2>&1 | tee logs/npm.log
+          npx cap add android 2>&1 | tee logs/cap-add.log
+          npx capacitor-assets generate --android \
+            --iconBackgroundColor '#11745b' --iconBackgroundColorDark '#11745b' \
+            --splashBackgroundColor '#11745b' --splashBackgroundColorDark '#091814' 2>&1 | tee logs/assets.log
+          node scripts/patch-android.mjs 2>&1 | tee logs/patch.log
+          npx cap sync android 2>&1 | tee logs/cap-sync.log
+
+      - name: Build APKs
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon assembleRelease assembleDebug 2>&1 | tee ../logs/gradle.log
+
+      - name: Collect and verify
+        run: |
+          set -e
+          mkdir -p out
+          BT="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/kashf-debug.apk
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk out/kashf.apk
+            cp out/kashf.apk "out/kashf-v${VERSION_NAME}.apk"
+          fi
+          {
+            echo "# Build ${VERSION_NAME}"
+            echo '```'
+            "$BT/aapt2" dump badging out/kashf-debug.apk | grep -E "^package|sdkVersion|targetSdkVersion|application-label:|native-code|densities" || true
+            echo "native libraries in APK: $(unzip -l out/kashf-debug.apk | grep -c ' lib/' || true)"
+            echo "npm versions:"; node -e "for(const p of ['@capacitor/core','@capacitor/android','@capacitor/cli']){try{console.log(' ',p,require(p+'/package.json').version)}catch(e){}}"
+            if [ -f out/kashf.apk ]; then
+              echo "release size: $(du -h out/kashf.apk | cut -f1)"
+              "$BT/apksigner" verify --verbose --print-certs out/kashf.apk | grep -E "Verified using|Signer #1 certificate (DN|SHA-256)" || true
+            else
+              echo "release APK: NOT SIGNED (secret missing)"
+            fi
+            echo '```'
+          } | tee out/build-report.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: out/
+          retention-days: 30
+
+      - name: Publish build report
+        if: always()
+        run: |
+          mkdir -p /tmp/rep && cp -r logs out/build-report.md /tmp/rep/ 2>/dev/null || true
+          echo "${{ job.status }}" > /tmp/rep/status.txt
+          cd /tmp/rep && git init -q && git checkout -q -b report-build
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "build ${VERSION_NAME}: ${{ job.status }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" report-build
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: out
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install websocket-client
+      - name: Run on Android emulator (API 34, x86_64)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash tests/run_e2e.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: report/
+      - name: Publish test report
+        if: always()
+        run: |
+          mkdir -p /tmp/rep && cp -r report/. /tmp/rep/ 2>/dev/null || true
+          echo "${{ job.status }}" > /tmp/rep/status.txt
+          cd /tmp/rep && git init -q && git checkout -q -b report-test
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "test ${VERSION_NAME}: ${{ job.status }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" report-test
+
+  release:
+    needs: [build, test]
+    if: needs.build.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          path: report
+      - name: Release notes
+        run: |
+          {
+            echo "تحميل مباشر: kashf.apk"
+            echo
+            cat report/install.md 2>/dev/null
+            echo
+            cat report/e2e.md 2>/dev/null
+            echo
+            cat out/build-report.md
+          } > notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION_NAME }}
+          name: كشف الغياب ${{ env.VERSION_NAME }}
+          body_path: notes.md
+          make_latest: true
+          files: |
+            out/kashf.apk
+            out/kashf-v${{ env.VERSION_NAME }}.apk

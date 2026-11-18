@@ -1,0 +1,19 @@
+{
+  "appId": "com.tarekelborai.kashf",
+  "appName": "كشف الغياب",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#f2f4f3"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 700,
+      "launchAutoHide": true,
+      "backgroundColor": "#11745b",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": true,
+      "splashImmersive": true
+    }
+  }
+}
