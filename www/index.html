@@ -233,21 +233,43 @@ details.del summary::-webkit-details-marker{display:none}
      with the same selectors, so nothing here can leak to the board (>760px). ---- */
   :root{font-size:calc(15px * var(--k))}
 
-  /* shell */
+  /* shell. Android's system font size scales every rem here, so nothing may insist on one line:
+     the page is clipped to the screen width and every row is allowed to wrap. */
+  .app,header.top,nav.dock{overflow-x:clip}
   header.top{flex-wrap:wrap;padding:.5rem .8rem;gap:.5rem}
-  .brand{flex-direction:row;align-items:center;gap:.8rem;width:100%;justify-content:space-between}
-  .groups{width:100%;flex:none}
+  .brand{flex-direction:row;flex-wrap:wrap;align-items:center;gap:.2rem .8rem;width:100%;justify-content:space-between}
+  .brand b{white-space:normal;min-width:0}
+  .brand .sync{white-space:normal;text-align:start}
+  .groups{width:100%;flex:none;flex-wrap:wrap;overflow-x:visible}
   main#view{padding:.8rem .8rem 1.2rem}
   nav.dock{flex-direction:column;align-items:stretch;gap:.5rem;padding:.5rem .6rem calc(.5rem + env(safe-area-inset-bottom))}
   .actions{flex-wrap:nowrap;overflow-x:auto}
   .actions:empty{display:none}
   .actions .btn{min-height:3.1rem;padding:0 .9rem;flex:none}
-  .tabs{justify-content:space-around}
-  .tab{min-width:0;flex:1;min-height:3.4rem}
+  .tabs{justify-content:space-around;min-width:0}
+  .tab{min-width:0;flex:1 1 0;min-height:3.4rem;padding:0 .1rem;overflow:hidden}
+  .tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* fitTabs(): smaller label when a label does not fit, icons only when even that does not fit */
+  .tabs.tight .tab span{font-size:.7rem}
+  .tabs.icons .tab span{display:none}
+  .tabs.icons .tab svg{width:1.8rem;height:1.8rem}
   /* the toast never swallows a tap meant for the row under it; only its own button is tappable */
   .toast{bottom:9rem;pointer-events:none}
   .toast button{pointer-events:auto}
   .sheet{align-self:flex-end;border-radius:1.4rem 1.4rem 1rem 1rem}
+
+  /* students screen: one column, nothing side by side that cannot fit */
+  body.scr-stu .bar{flex-direction:column;align-items:stretch;gap:.6rem}
+  body.scr-stu .bar h2.title{overflow-wrap:anywhere}
+  body.scr-stu .seg{display:flex;width:100%}
+  body.scr-stu .seg button{flex:1 1 0;min-width:0;white-space:normal;line-height:1.25;padding:.35rem .5rem}
+  body.scr-stu .bar>.btn{width:100%}
+  body.scr-stu .addbar{flex-wrap:wrap}
+  body.scr-stu .addbar input{flex:1 1 100%;min-width:0;width:100%}
+  body.scr-stu .addbar .btn{flex:1 1 0;min-width:0;white-space:normal;line-height:1.25;padding:.35rem .6rem}
+  body.scr-stu .rows{grid-template-columns:minmax(0,1fr)}
+  body.scr-stu .row{min-width:0}
+  body.scr-stu details.del summary{white-space:normal}
 
   /* other screens */
   .stats{margin-inline-start:0;width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
@@ -551,6 +573,8 @@ async function flush(){
 }
 window.addEventListener("resize",()=>{if(S.screen==="fin")scheduleRender()});
 if(PHONE_MQ.addEventListener)PHONE_MQ.addEventListener("change",()=>{if(S.ready)mountView()});
+window.addEventListener("resize",()=>fitTabs());
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>fitTabs());
 window.addEventListener("online",()=>{Sync.backoff=0;kick(0);Sync.want.forEach(n=>{if(!D(n).unsub)openDoc(n)})});
 window.addEventListener("offline",()=>{Sync.offline=true;renderSync()});
 
@@ -705,8 +729,16 @@ function renderGroups(){
 }
 function renderTabs(){
   const tabs=[["att","الحضور",I.att],["stu","الطلاب",I.stu],["fin","الحسابات",I.fin],["set","الإعدادات",I.set]];
-  $("#tabs").innerHTML=tabs.map(t=>'<button type="button" class="tab" data-act="screen" data-s="'+t[0]+'"'+(S.screen===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span></button>').join("")+
-    (NATIVE?'<button type="button" class="tab exit" data-act="exitapp">'+I.exit+'<span>خروج</span></button>':'');
+  $("#tabs").innerHTML=tabs.map(t=>'<button type="button" class="tab" data-act="screen" data-s="'+t[0]+'" aria-label="'+t[1]+'"'+(S.screen===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span></button>').join("")+
+    (NATIVE?'<button type="button" class="tab exit" data-act="exitapp" aria-label="خروج">'+I.exit+'<span>خروج</span></button>':'');
+  fitTabs();
+}
+/* phone only: measure the real rendering (Android's font size included) instead of guessing */
+function fitTabs(){
+  const t=$("#tabs");if(!t)return;t.classList.remove("tight","icons");
+  if(!isPhone())return;
+  const over=()=>Array.from(t.querySelectorAll(".tab span")).some(x=>x.scrollWidth>x.clientWidth+1);
+  if(over()){t.classList.add("tight");if(over()){t.classList.remove("tight");t.classList.add("icons")}}
 }
 function renderDock(){
   const a=$("#actions");let h="";
