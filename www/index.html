@@ -229,7 +229,36 @@ details.del summary::-webkit-details-marker{display:none}
 /* phone attendance header: hidden on the board */
 .phead,.pfilter{display:none}
 @media (max-width:760px){
+  /* ---- Phone. One layer only: everything below overrides the board rules above by order,
+     with the same selectors, so nothing here can leak to the board (>760px). ---- */
   :root{font-size:calc(15px * var(--k))}
+
+  /* shell */
+  header.top{flex-wrap:wrap;padding:.5rem .8rem;gap:.5rem}
+  .brand{flex-direction:row;align-items:center;gap:.8rem;width:100%;justify-content:space-between}
+  .groups{width:100%;flex:none}
+  main#view{padding:.8rem .8rem 1.2rem}
+  nav.dock{flex-direction:column;align-items:stretch;gap:.5rem;padding:.5rem .6rem calc(.5rem + env(safe-area-inset-bottom))}
+  .actions{flex-wrap:nowrap;overflow-x:auto}
+  .actions:empty{display:none}
+  .actions .btn{min-height:3.1rem;padding:0 .9rem;flex:none}
+  .tabs{justify-content:space-around}
+  .tab{min-width:0;flex:1;min-height:3.4rem}
+  /* the toast never swallows a tap meant for the row under it; only its own button is tappable */
+  .toast{bottom:9rem;pointer-events:none}
+  .toast button{pointer-events:auto}
+  .sheet{align-self:flex-end;border-radius:1.4rem 1.4rem 1rem 1rem}
+
+  /* other screens */
+  .stats{margin-inline-start:0;width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
+  .stat{min-width:0;padding:.35rem .5rem}
+  .stat b{font-size:1.35rem}
+  .dn-mid{font-size:1rem;padding:0 .8rem;flex:1}
+  .datenav{width:100%}
+  .rows,.panels{grid-template-columns:1fr}
+  .keys{grid-template-columns:repeat(3,4.8rem)}
+
+  /* attendance: compact sticky header replaces the top bar and the board's date/stat boxes */
   body.scr-att header.top{display:none}
   body.scr-att main#view{padding-top:0}
   body.scr-att .atthead{display:none}
@@ -242,17 +271,19 @@ details.del summary::-webkit-details-marker{display:none}
   .ph-date.past{border-color:var(--warn);color:var(--warn-text);background:var(--warn-soft)}
   .ph-date input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
   .ph-stats{display:flex;align-items:center;gap:.9rem;font-weight:700;font-size:.95rem;font-variant-numeric:tabular-nums}
-  .ph-stats .g{color:var(--ok-text)}.ph-stats .r{color:var(--bad-text)}.ph-stats .m{color:var(--muted);font-weight:600}
+  .ph-stats .g{color:var(--ok-text)}
+  .ph-stats .r{color:var(--bad-text)}
+  .ph-stats .m{color:var(--muted);font-weight:600}
   .ph-stats .sp{flex:1}
   .ph-stats .sync{min-height:0;font-size:.75rem}
   .ph-bar{height:.32rem;border-radius:.16rem;background:var(--surface2);overflow:hidden}
   .ph-bar i{display:block;height:100%;background:var(--ok)}
   .pfilter{display:flex;align-items:center;justify-content:space-between;gap:.6rem;background:var(--bad-soft);color:var(--bad-text);border-radius:.8rem;padding:.35rem .4rem .35rem .8rem;font-weight:700;font-size:.92rem}
-  .pfilter[hidden]{display:none!important}
   .pfilter button{min-height:2.5rem;border-radius:.7rem;border:none;background:var(--surface);color:var(--ink);font-weight:700;padding:0 .9rem}
-  /* one column of wide rows: one line per name, straight top-to-bottom order */
-  #agrid.grid{grid-template-columns:1fr;gap:.36rem}
-  .card{min-height:3.5rem;padding:.3rem .75rem .3rem .6rem;border-radius:.85rem;gap:.7rem}
+
+  /* attendance list: one column of 56px rows (Material one-line list height), 5.4px apart */
+  .grid{grid-template-columns:1fr;gap:.36rem}
+  .card{min-height:3.75rem;padding:.3rem .75rem .3rem .6rem;border-radius:.85rem;gap:.7rem}
   .card .no{position:static;flex:none;width:1.7rem;text-align:center;font-size:.8rem}
   .card .tx{padding-top:0;flex-direction:row;align-items:baseline;gap:.6rem}
   .card .nm{font-size:1.14rem;line-height:1.35;flex:1;min-width:0}
@@ -260,13 +291,15 @@ details.del summary::-webkit-details-marker{display:none}
   .card .ck{width:2.15rem;height:2.15rem}
   .card .ck svg{width:1.3rem;height:1.3rem}
   .card:active{transform:none;filter:brightness(.97)}
-  /* thumb bar: five equal buttons, no horizontal scrolling */
-  body.scr-att .actions{display:grid;grid-template-columns:repeat(5,1fr);gap:.35rem;overflow:visible}
-  body.scr-att .actions .btn{min-height:3.3rem;padding:0 .2rem;flex-direction:column;gap:.1rem;font-size:.76rem;border-radius:.85rem}
-  body.scr-att .actions .btn svg{width:1.3rem;height:1.3rem}
-  body.scr-att .actions .btn .badge{position:absolute;margin:-2.3rem -2rem 0 0;min-width:1.2rem;height:1.2rem;font-size:.66rem}
-  body.scr-att .actions .btn{position:relative}
-  body.scr-att .actions .btn[aria-pressed="true"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad-text)}
+
+  /* attendance thumb bar (renderDock adds .thumb): five equal buttons, never scrolls sideways */
+  .actions.thumb{display:grid;grid-template-columns:repeat(5,1fr);gap:.35rem;overflow:visible}
+  .actions.thumb .btn{position:relative;min-height:3.3rem;padding:0 .2rem;flex-direction:column;gap:.1rem;font-size:.76rem;border-radius:.85rem}
+  .actions.thumb .btn svg{width:1.3rem;height:1.3rem}
+  .actions.thumb .btn .badge{position:absolute;top:.2rem;inset-inline-end:.35rem;min-width:1.2rem;height:1.2rem;font-size:.66rem}
+  .actions.thumb .btn[aria-pressed="true"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad-text)}
+
+  /* attendance sheets */
   .glist{display:flex;flex-direction:column;gap:.5rem}
   .glist .gchip{width:100%;min-height:3.6rem;border-radius:1rem;display:flex;align-items:center;justify-content:space-between;padding:0 1.1rem;font-size:1.05rem}
   .finish .big3{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
@@ -274,27 +307,6 @@ details.del summary::-webkit-details-marker{display:none}
   .finish .big3 b{display:block;font-family:var(--display);font-size:1.8rem}
   .finish .names{max-height:32vh;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem}
   .finish .names span{padding:.45rem .7rem;border-radius:.6rem;background:var(--bad-soft);color:var(--bad-text);font-weight:700}
-  .sheet{align-self:flex-end;border-radius:1.4rem 1.4rem 1rem 1rem}
-
-  header.top{flex-wrap:wrap;padding:.5rem .8rem;gap:.5rem}
-  .brand{flex-direction:row;align-items:center;gap:.8rem;width:100%;justify-content:space-between}
-  .groups{width:100%;flex:none}
-  main#view{padding:.8rem .8rem 1.2rem}
-  nav.dock{flex-direction:column;align-items:stretch;gap:.5rem;padding:.5rem .6rem calc(.5rem + env(safe-area-inset-bottom))}
-  .actions{flex-wrap:nowrap;overflow-x:auto}
-  .actions:empty{display:none}
-  .actions .btn{min-height:3.1rem;padding:0 .9rem;flex:none}
-  .tabs{justify-content:space-around}
-  .tab{min-width:0;flex:1;min-height:3.4rem}
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
-  .stats{margin-inline-start:0;width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
-  .stat{min-width:0;padding:.35rem .5rem}
-  .stat b{font-size:1.35rem}
-  .dn-mid{font-size:1rem;padding:0 .8rem;flex:1}
-  .datenav{width:100%}
-  .rows,.panels{grid-template-columns:1fr}
-  .keys{grid-template-columns:repeat(3,4.8rem)}
-  .toast{bottom:9rem}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -698,6 +710,7 @@ function renderTabs(){
 }
 function renderDock(){
   const a=$("#actions");let h="";
+  a.className="actions"+(S.ready&&S.screen==="att"&&isPhone()&&curGroup()?" thumb":"");
   if(!S.ready){a.innerHTML="";return}
   const g=curGroup();
   if(S.screen==="att"&&g&&isPhone()){
@@ -1237,7 +1250,11 @@ document.addEventListener("click",async ev=>{
     case "close":closeSheet();return;
     case "screen":setScreen(el.dataset.s);return;
     case "group":S.gid=id;S.q="";S.absOnly=null;LS.set("k2:ui",{gid:id});syncWanted();$("#view").scrollTop=0;if(S.screen==="fin"&&F.key)S.fin.filter="all";updateAll();return;
-    case "tog":toggleStudent(id);if(S.search&&S.q){S.q="";const q=$("#q");if(q){q.value="";q.focus()}}scheduleRender();return;
+    case "tog":{
+      const now=Date.now();
+      if(isPhone()&&S.lastTog&&S.lastTog.id===id&&now-S.lastTog.t<400)return;
+      S.lastTog={id:id,t:now};
+      toggleStudent(id);}if(S.search&&S.q){S.q="";const q=$("#q");if(q){q.value="";q.focus()}}scheduleRender();return;
     case "allpresent":{
       const g=curGroup();if(!g)return;const list=roster(g.id),dm=dayMap(g.id,S.date),dd=S.date.slice(8),p={},inv={};
       list.forEach(s=>{if(dm[s.id]!==1){p[s.id]=1;inv[s.id]=0}});
@@ -1250,7 +1267,7 @@ document.addEventListener("click",async ev=>{
       if(!Object.keys(p).length){toast("مفيش حضور متسجل في اليوم ده");return}
       const n=attName(g.id,S.date);write(n,{d:{[dd]:p}});pushUndo("att",{label:"مسح اليوم",n:n,p:{d:{[dd]:inv}},date:S.date,gid:g.id});
       toast("اتمسح حضور اليوم",()=>doUndo());return}
-    case "undo":doUndo();return;
+    case "undo":{const now=Date.now();if(isPhone()&&S.lastUndo&&now-S.lastUndo<400)return;S.lastUndo=now;doUndo();return}
     case "toastundo":{const f=S.toastUndo;$("#toast").hidden=true;S.toastUndo=null;if(f)f();return}
     case "search":{const v=$("#view");if(!S.search)S.scrollBeforeSearch=v.scrollTop;S.search=!S.search;S.q="";updateAll();
       if(S.search){v.scrollTop=0;const q=$("#q");if(q){q.value="";q.focus()}}else{v.scrollTop=S.scrollBeforeSearch||0}return}
