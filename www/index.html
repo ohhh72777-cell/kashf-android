@@ -298,10 +298,35 @@ const MONTHS=["يناير","فبراير","مارس","أبريل","مايو","ي
 function norm(s){return String(s||"").replace(/[ً-ٰٟـ]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/\s+/g," ").trim().toLowerCase()}
 const cmpName=(a,b)=>a.n.localeCompare(b.n,"ar");
 function withTimeout(p,ms){let t;return Promise.race([p,new Promise((_,rej)=>{t=setTimeout(()=>rej({code:"timeout"}),ms)})]).finally(()=>clearTimeout(t))}
+/* Android app: the WebView writes localStorage to disk only every few seconds, so killing the
+   app could drop the last taps. Every k2:* write is also written through to a native file
+   (finished within milliseconds); on start those files are restored before anything is read. */
+const Durable={FS:null,pend:new Map(),busy:new Set(),broken:false,
+  file:k=>"kashf-store/"+encodeURIComponent(k).replace(/%/g,"_")+".json",
+  put(k,v){if(!this.FS||k.indexOf("k2:")!==0)return;this.pend.set(k,v);if(!this.busy.has(k))this.pump(k)},
+  async pump(k){
+    this.busy.add(k);
+    try{while(this.pend.has(k)){const v=this.pend.get(k);this.pend.delete(k);
+      try{if(v===null)await this.FS.deleteFile({path:this.file(k),directory:"DATA"});
+          else await this.FS.writeFile({path:this.file(k),data:JSON.stringify({k:k,v:v}),directory:"DATA",encoding:"utf8",recursive:true})}
+      catch(e){if(v!==null){this.broken=true;try{localStorage.setItem("k2-durable-broken","1")}catch(_){}}}}}
+    finally{this.busy.delete(k)}
+  },
+  async restore(){
+    if(!this.FS)return 0;
+    try{if(localStorage.getItem("k2-durable-broken"))return 0}catch(e){}
+    let list=[];try{list=(await this.FS.readdir({path:"kashf-store",directory:"DATA"})).files||[]}catch(e){return 0}
+    let n=0;
+    for(const f of list){const name=typeof f==="string"?f:f.name;if(!name||!/\.json$/.test(name))continue;
+      try{const r=await this.FS.readFile({path:"kashf-store/"+name,directory:"DATA",encoding:"utf8"});const o=JSON.parse(r.data);
+        if(o&&typeof o.k==="string"&&typeof o.v==="string"&&localStorage.getItem(o.k)!==o.v){localStorage.setItem(o.k,o.v);n++}}catch(e){}}
+    return n;
+  }
+};
 const LS={
   get(k){try{const t=localStorage.getItem(k);return t==null?undefined:JSON.parse(t)}catch(e){return undefined}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
-  del(k){try{localStorage.removeItem(k)}catch(e){}},
+  set(k,v){try{const t=JSON.stringify(v);localStorage.setItem(k,t);Durable.put(k,t);return true}catch(e){return false}},
+  del(k){try{localStorage.removeItem(k)}catch(e){}Durable.put(k,null)},
   keys(pre){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(pre)===0)out.push(k)}}catch(e){}return out}
 };
 function setHTML(el,h){if(el&&el._h!==h){el.innerHTML=h;el._h=h}}
@@ -1333,6 +1358,7 @@ function waitKnown(n,ms){
   return new Promise(res=>{const t0=Date.now();(function chk(){const d=D(n);if(d.known||Date.now()-t0>ms)return res(d.known);setTimeout(chk,60)})()});
 }
 async function boot(){
+  if(NATIVE){Durable.FS=Plug("Filesystem");const n=await Durable.restore();if(n){Object.assign(DEV,LS.get("k2:dev")||{})}window.__kashf.restored=n}
   applyTheme();renderTabs();
   const ui=LS.get("k2:ui")||{};S.gid=ui.gid||null;
   let db=null,uid=null;

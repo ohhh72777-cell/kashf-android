@@ -132,6 +132,9 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
+          profile: pixel_6
+          ram-size: 4096M
+          disk-size: 4096M
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash tests/run_e2e.sh
       - uses: actions/upload-artifact@v4

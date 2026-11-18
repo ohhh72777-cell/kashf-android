@@ -150,6 +150,15 @@ def run():
     ok("real finger taps mark students present", all(on), on)
     shot("phone_attendance")
 
+    # --- kill the app the instant after a tap
+    p.tap(card_sel(5))
+    adb(f"shell am force-stop {PKG}")
+    launch()
+    p = Page()
+    p.wait("document.querySelectorAll('#agrid .card').length===40")
+    ok("tap made right before the app was killed is kept", p.ev("document.querySelector('#agrid .card:nth-child(5)').classList.contains('on')"))
+    p.tap(card_sel(5))
+    time.sleep(0.5)
     # --- kill the app, reopen
     p = restart()
     p.wait("document.querySelectorAll('#agrid .card').length===40")
@@ -263,7 +272,7 @@ def run():
 try:
     run()
 except Exception as e:
-    ok("test run completed", False, repr(e))
+    ok("test run completed", False, repr(e) + " | pid=" + adb(f"shell pidof {PKG}") + " | " + adb("shell dumpsys window | grep -m1 mCurrentFocus"))
     shot("failure")
 crash = adb("logcat -d -b crash")
 ok("no app crash in logcat", PKG not in crash, crash[-300:])

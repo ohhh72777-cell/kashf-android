@@ -20,4 +20,9 @@ adb exec-out screencap -p > report/release_launch.png
 adb logcat -d -b crash > report/crash-release.txt || true
 adb uninstall $PKG >/dev/null 2>&1 || true
 adb install -r out/kashf-debug.apk
-python3 tests/android_e2e.py report
+adb logcat -c || true
+python3 tests/android_e2e.py report; RC=$?
+adb logcat -d -v time > report/logcat-full.txt 2>/dev/null || true
+grep -E "kashf|chromium|Capacitor|ActivityManager|AndroidRuntime|WebView|lowmemory|libc|DEBUG" report/logcat-full.txt | tail -3000 > report/logcat.txt || true
+rm -f report/logcat-full.txt
+exit $RC
