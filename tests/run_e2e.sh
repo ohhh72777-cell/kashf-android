@@ -6,6 +6,8 @@ PKG=com.tarekelborai.kashf
 mkdir -p report
 adb wait-for-device
 adb shell settings put global window_animation_scale 0 || true
+# the one-time system notice 'Viewing full screen' would cover the first taps
+adb shell settings put secure immersive_mode_confirmations confirmed || true
 {
   echo "## Install test"
   if [ -f out/kashf.apk ]; then APK=out/kashf.apk; KIND=release; else APK=out/kashf-debug.apk; KIND="debug (release not signed: KEYSTORE_PASSWORD secret missing)"; fi

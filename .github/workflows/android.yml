@@ -125,11 +125,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install websocket-client
-      - name: Run on Android emulator (API 34, x86_64)
+      - name: Run on Android emulator (API 34 AOSP, x86_64)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
-          target: google_apis
+          target: default
           arch: x86_64
           disable-animations: true
           profile: pixel_6

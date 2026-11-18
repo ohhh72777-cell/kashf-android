@@ -316,10 +316,10 @@ const Durable={FS:null,pend:new Map(),busy:new Set(),broken:false,
     if(!this.FS)return 0;
     try{if(localStorage.getItem("k2-durable-broken"))return 0}catch(e){}
     let list=[];try{list=(await this.FS.readdir({path:"kashf-store",directory:"DATA"})).files||[]}catch(e){return 0}
+    const names=list.map(f=>typeof f==="string"?f:f.name).filter(n=>n&&/\.json$/.test(n));
+    const got=await Promise.all(names.map(name=>this.FS.readFile({path:"kashf-store/"+name,directory:"DATA",encoding:"utf8"}).then(r=>r.data,()=>null)));
     let n=0;
-    for(const f of list){const name=typeof f==="string"?f:f.name;if(!name||!/\.json$/.test(name))continue;
-      try{const r=await this.FS.readFile({path:"kashf-store/"+name,directory:"DATA",encoding:"utf8"});const o=JSON.parse(r.data);
-        if(o&&typeof o.k==="string"&&typeof o.v==="string"&&localStorage.getItem(o.k)!==o.v){localStorage.setItem(o.k,o.v);n++}}catch(e){}}
+    for(const d of got){try{const o=JSON.parse(d);if(o&&typeof o.k==="string"&&typeof o.v==="string"&&localStorage.getItem(o.k)!==o.v){localStorage.setItem(o.k,o.v);n++}}catch(e){}}
     return n;
   }
 };
