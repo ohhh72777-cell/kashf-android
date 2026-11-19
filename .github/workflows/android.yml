@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VERSION_NAME: "1.0.${{ github.run_number }}"
+  # versionCode always grows with every build; the visible version comes from package.json
   VERSION_CODE: "${{ github.run_number }}"
 
 jobs:
@@ -23,8 +23,14 @@ jobs:
     timeout-minutes: 30
     outputs:
       signed: ${{ steps.sign.outputs.signed }}
+      version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+      - name: Version
+        id: ver
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "VERSION_NAME=$V" >> "$GITHUB_ENV"; echo "version=$V" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -192,10 +198,10 @@ jobs:
           } > notes.md
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION_NAME }}
-          name: كشف الغياب ${{ env.VERSION_NAME }}
+          tag_name: v${{ needs.build.outputs.version }}
+          name: كشف الغياب ${{ needs.build.outputs.version }}
           body_path: notes.md
           make_latest: true
           files: |
             out/kashf.apk
-            out/kashf-v${{ env.VERSION_NAME }}.apk
+            out/kashf-v${{ needs.build.outputs.version }}.apk

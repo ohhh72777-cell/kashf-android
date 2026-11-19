@@ -850,7 +850,7 @@ UPDATE.att=()=>{
   const dp=$("#dpick");if(dp.value!==S.date)dp.value=S.date;
   $("#sbar").hidden=!S.search;
   const list=roster(g.id);
-  if(!list.length){$("#astats").innerHTML="";gridEl.className="";gridEl.innerHTML='<div class="empty"><h2>المجموعة دي لسه مفيهاش طلاب</h2><div>ضيف الأسماء مرة واحدة من شاشة الطلاب.</div><button type="button" class="btn primary" data-act="screen" data-s="stu">'+I.stu+'إضافة الطلاب</button></div>';return}
+  if(!list.length){$("#astats").innerHTML="";updatePhoneHead(g,0,0,0,0,isToday);gridEl.className="";gridEl.innerHTML='<div class="empty"><h2>المجموعة دي لسه مفيهاش طلاب</h2><div>ضيف الأسماء مرة واحدة من شاشة الطلاب.</div><button type="button" class="btn primary" data-act="screen" data-s="stu">'+I.stu+'إضافة الطلاب</button></div>';return}
   const dm=dayMap(g.id,S.date);
   const present=list.filter(s=>dm[s.id]===1).length,absent=list.length-present,pct=Math.round(present/list.length*100);
   updatePhoneHead(g,list.length,present,absent,pct,isToday);
