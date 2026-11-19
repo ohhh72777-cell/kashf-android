@@ -1,0 +1,152 @@
+[
+ {
+  "name": "device",
+  "ok": true,
+  "detail": "Android API 34, ABI x86_64"
+ },
+ {
+  "name": "app opens directly (no browser), cold start ms",
+  "ok": true,
+  "detail": "1507"
+ },
+ {
+  "name": "running as native app, Capacitor plugins available",
+  "ok": true,
+  "detail": "['App', 'SplashScreen', 'Haptics', 'CapacitorCookies', 'WebView', 'Filesystem', 'Share', 'CapacitorHttp']"
+ },
+ {
+  "name": "WebView version",
+  "ok": true,
+  "detail": "Chrome/113.0.5672.136"
+ },
+ {
+  "name": "full screen (no browser bar)",
+  "ok": true,
+  "detail": "viewport 412x915, screen 412x915"
+ },
+ {
+  "name": "starts in device-storage mode",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "group + 40 students created",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "real finger taps mark students present",
+  "ok": true,
+  "detail": "[True, True, True]"
+ },
+ {
+  "name": "tap made right before the app was killed is kept",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "attendance survives killing the app",
+  "ok": true,
+  "detail": "[True, True, True, False]"
+ },
+ {
+  "name": "works in airplane mode",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "airplane-mode change still there after restart",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "PIN created, recovery code shown",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "payment recorded with a real tap",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "no plain amounts / month names / PIN in app storage",
+  "ok": true,
+  "detail": "[]"
+ },
+ {
+  "name": "finance locked after restart, no amounts visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "wrong PIN refused",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "right PIN opens, payment intact",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "Back key returns to attendance",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "leaving finance locked it again",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "backup: share sheet opened",
+  "ok": true,
+  "detail": "mCurrentFocus=Window{d81b17 u0 com.android.intentresolver/com.android.intentresolver.ChooserActivity}"
+ },
+ {
+  "name": "backup: file saved in Documents",
+  "ok": true,
+  "detail": "kashf-backup-2026-11-19.json"
+ },
+ {
+  "name": "board size landscape 1920x1080: all 40 students on one screen",
+  "ok": true,
+  "detail": "[1920, 1080, True]"
+ },
+ {
+  "name": "phone portrait",
+  "ok": true,
+  "detail": "[412, 915]"
+ },
+ {
+  "name": "exit button visible",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "exit button closes the app",
+  "ok": true,
+  "detail": "mCurrentFocus=Window{bea1a22 u0 com.android.launcher3/com.android.launcher3.uioverrides.QuickstepLauncher}"
+ },
+ {
+  "name": "data intact after exiting with the button",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "web-version backup restored with the same student IDs",
+  "ok": true,
+  "detail": "['ck9vjptp', 'piu1hk9d', 'ujeh1kf4']"
+ },
+ {
+  "name": "same PIN as the web version opens the restored finance",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "no app crash in logcat",
+  "ok": true,
+  "detail": ""
+ }
+]
