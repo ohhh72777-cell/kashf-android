@@ -6,7 +6,7 @@ Part A — debug builds (old = v1.0.7 app code, new = this build, same debug key
 Part B — the published v1.0.7 release APK, then this release APK on top: the signing key must be
           accepted (no uninstall) and data created in the old release must still be there.
 """
-import json, os, re, subprocess, sys, time, urllib.request, xml.etree.ElementTree as ET
+import json, os, re, subprocess, sys, time, urllib.request
 import websocket
 
 PKG = "com.tarekelborai.kashf"
@@ -102,35 +102,40 @@ def part_a():
     ok("A: settings kept", p.ev("document.documentElement.dataset.size") == "l")
     adb("exec-out screencap -p > " + OUT + "/upgrade_after.png")
 
-def ui_dump():
-    adb("shell uiautomator dump /sdcard/ui.xml"); x = adb("shell cat /sdcard/ui.xml")
-    try: return ET.fromstring(x[x.index("<?xml"):])
-    except Exception: return None
-def ui_tap(text):
-    root = ui_dump()
-    if root is None: return False
-    for n in root.iter("node"):
-        if text in (n.get("text") or "") or text in (n.get("content-desc") or ""):
-            b = [int(v) for v in re.findall(r"\d+", n.get("bounds"))]; adb(f"shell input tap {(b[0]+b[2])//2} {(b[1]+b[3])//2}"); return True
-    return False
-def ui_has(text):
-    root = ui_dump()
-    return root is not None and any(text in (n.get("text") or "") or text in (n.get("content-desc") or "") for n in root.iter("node"))
+def shot(name):
+    sh(f"adb exec-out screencap -p > {OUT}/{name}.png"); return f"{OUT}/{name}.png"
+def diff(a, b):
+    from PIL import Image, ImageChops, ImageStat
+    x, y = Image.open(a).convert("L"), Image.open(b).convert("L")
+    if x.size != y.size: y = y.resize(x.size)
+    return sum(ImageStat.Stat(ImageChops.difference(x, y)).mean)
+QUICK = '[data-act="quickgroup"][data-n="أولى ثانوي"]'
+TAPXY = f"(()=>{{const e=document.querySelector({json.dumps(QUICK)});const b=e.getBoundingClientRect();return [Math.round((b.x+b.width/2)*devicePixelRatio),Math.round((b.y+b.height/2)*devicePixelRatio)]}})()"
 
 def part_b():
+    """Release builds cannot be inspected, so: tap position comes from the same old code in a debug
+    build, and the screen after the update is compared with reference screens of the new code."""
     if not os.path.exists("out/kashf.apk"): ok("B: release APK present", False, "not signed in this run"); return
+    # reference screens of the NEW code (debug build of the same code): empty app vs. app with one group
+    adb(f"uninstall {PKG}"); adb("install out/kashf-debug.apk"); launch(); p = Page(); time.sleep(2)
+    ref_empty = shot("ref_new_empty"); p.click(QUICK); time.sleep(1); p.click('[data-act="screen"][data-s="att"]'); time.sleep(2)
+    adb(f"shell am force-stop {PKG}"); launch(); Page(); time.sleep(3); ref_group = shot("ref_new_one_group")
+    # where the "أولى ثانوي" button is in the OLD code on this screen
+    adb(f"uninstall {PKG}"); adb("install out/kashf-old-debug.apk"); launch(); p = Page(); time.sleep(2)
+    x, y = p.ev(TAPXY)
+    # the published v1.0.7 release, data made by tapping, then the new release installed on top
     adb(f"uninstall {PKG}"); out = adb("install out/kashf-v107-release.apk")
     ok("B: published v1.0.7 release installed", "Success" in out, out[-80:])
-    launch(); time.sleep(4)
-    made = ui_tap("أولى ثانوي"); time.sleep(3)
-    ok("B: data created in the old release (group 'أولى ثانوي')", made and ui_has("أولى ثانوي"))
+    launch(); time.sleep(4); b0 = shot("b_old_release_before")
+    adb(f"shell input tap {x} {y}"); time.sleep(3); b1 = shot("b_old_release_with_group")
+    ok("B: data created in the old release (tapped 'أولى ثانوي')", diff(b0, b1) > 3, round(diff(b0, b1), 1))
     adb(f"shell am force-stop {PKG}")
     out = adb("install -r out/kashf.apk")
     ok("B: new signed release installs OVER v1.0.7 (same key, no uninstall)", "Success" in out, out[-120:])
-    ver = adb(f"shell dumpsys package {PKG} | grep -m1 versionName")
-    launch(); time.sleep(5)
-    ok("B: group made in the old release still there after updating", ui_has("أولى ثانوي"), ver)
-    adb("exec-out screencap -p > " + OUT + "/upgrade_release_after.png")
+    launch(); time.sleep(6); after = shot("b_new_release_after_update")
+    dg, de = diff(after, ref_group), diff(after, ref_empty)
+    ok("B: after updating, the release shows the group made in the old release (matches 'one group', not 'empty app')", dg < de and dg < 4, f"diff to 'one group' {dg:.1f}, to 'empty' {de:.1f}")
+    ok("B: installed version", True, adb(f"shell dumpsys package {PKG} | grep -m1 versionName"))
 
 for part in (part_a, part_b):
     try: part()

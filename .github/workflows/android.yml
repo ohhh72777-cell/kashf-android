@@ -136,7 +136,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install websocket-client
+      - run: pip install websocket-client pillow
       - name: Run on Android emulator (API 34 AOSP, x86_64)
         uses: reactivecircus/android-emulator-runner@v2
         with:
