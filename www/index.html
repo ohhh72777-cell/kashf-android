@@ -85,7 +85,7 @@ nav.dock{display:flex;align-items:center;gap:1rem;padding:.55rem 1.2rem calc(.55
 .btn:active:not(:disabled),.tab:active,.gchip:active,.dn-btn:active{transform:scale(.97)}
 
 /* attendance head */
-.atthead{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem 1.2rem;margin-bottom:1rem}
+.atthead{display:flex;flex-wrap:wrap;align-items:center;gap:.9rem 1.2rem;margin-bottom:1rem;position:sticky;top:-1rem;z-index:4;background:var(--bg);margin-top:-1rem;padding-top:1rem;padding-bottom:.01px}
 .datenav{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .dn-btn{width:3.5rem;height:3.5rem;flex:none;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
 .dn-btn svg{width:1.5rem;height:1.5rem}
@@ -130,6 +130,8 @@ nav.dock{display:flex;align-items:center;gap:1rem;padding:.55rem 1.2rem calc(.55
 h2.title{font-family:var(--display);font-size:1.45rem;margin:0}
 .sub{color:var(--muted);font-size:.92rem;font-weight:500}
 .addbar{display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap}
+.stusearch{margin-bottom:.8rem}
+.stusearch input{width:100%;min-height:3.2rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);padding:0 1.1rem;font-size:1rem}
 .addbar input{flex:1;min-width:12rem;min-height:3.6rem;border-radius:1rem;border:1.5px solid var(--line2);background:var(--surface);padding:0 1.1rem;font-size:1.1rem}
 .seg{display:inline-flex;border:1.5px solid var(--line);border-radius:1rem;overflow:hidden;background:var(--surface)}
 .seg button{min-height:3.1rem;padding:0 1.1rem;border:none;background:transparent;font-weight:700;font-size:.95rem}
@@ -218,6 +220,22 @@ details.del summary::-webkit-details-marker{display:none}
 .amount{font-family:var(--display);font-size:2.4rem;font-weight:700;text-align:center;min-height:3.6rem;font-variant-numeric:tabular-nums;border-radius:1rem;background:var(--bg);padding:.3rem}
 .sheet .keys{align-self:center}
 .days{display:flex;flex-wrap:wrap;gap:.4rem}
+.hist{display:flex;flex-direction:column;gap:.7rem;margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line)}
+.hist h3{margin:0;font-family:var(--display);font-size:1.15rem}
+.hfil{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.hmon{display:flex;align-items:center;gap:.5rem}
+.hstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}
+.hstats div{background:var(--bg);border-radius:.8rem;padding:.45rem .4rem;text-align:center;display:flex;flex-direction:column}
+.hstats span{font-size:.74rem;color:var(--muted);font-weight:700}
+.hstats b{font-family:var(--display);font-size:1.35rem}
+.hstats .g{color:var(--ok-text)}.hstats .r{color:var(--bad-text)}
+.htable{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:.8rem;overflow:hidden;max-height:45vh;overflow-y:auto}
+.hrow{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.8fr) minmax(0,1fr);gap:.5rem;align-items:center;padding:.5rem .8rem;border-bottom:1px solid var(--line);font-weight:600}
+.hrow:last-child{border-bottom:none}
+.hrow small{color:var(--muted);font-weight:500}
+.hrow.hhead{background:var(--surface2);font-size:.8rem;color:var(--muted);position:sticky;top:0}
+.hrow .pp{color:var(--ok-text)}.hrow .aa{color:var(--bad-text)}
+.hrow .hg{font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
 .days span{min-width:2.6rem;height:2.6rem;border-radius:.7rem;display:grid;place-items:center;font-weight:700;font-size:.9rem}
 .days .p{background:var(--ok-soft);color:var(--ok-text)}
 .days .a{background:var(--bad-soft);color:var(--bad-text)}
@@ -289,7 +307,11 @@ details.del summary::-webkit-details-marker{display:none}
   .ph-group{flex:1;min-width:0;min-height:2.9rem;border-radius:.9rem;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:.4rem;padding:0 .9rem;font-family:var(--display);font-weight:700;font-size:1.08rem;text-align:start}
   .ph-group b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ph-group svg{width:1.1rem;height:1.1rem;flex:none;color:var(--muted)}
-  .ph-date{position:relative;flex:none;min-height:2.9rem;border-radius:.9rem;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;padding:0 .8rem;font-weight:700;font-size:.92rem;white-space:nowrap}
+  .ph-date{position:relative;flex:none;min-height:2.9rem;border-radius:.9rem;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;padding:.2rem .75rem;font-weight:700;font-size:.92rem;white-space:nowrap}
+  .ph-date #phD{display:flex;flex-direction:column;line-height:1.2}
+  .ph-date .wd{font-size:.72rem;font-weight:600;color:var(--muted)}
+  .ph-date.past .wd{color:inherit}
+  .ph-date .dt{font-size:.9rem}
   .ph-date.past{border-color:var(--warn);color:var(--warn-text);background:var(--warn-soft)}
   .ph-date input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
   .ph-stats{display:flex;align-items:center;gap:.9rem;font-weight:700;font-size:.95rem;font-variant-numeric:tabular-nums}
@@ -378,6 +400,10 @@ const todayStr=()=>ymd(new Date());
 const parseD=s=>{const p=s.split("-").map(Number);return new Date(p[0],p[1]-1,p[2]||1)};
 const fmtDay=new Intl.DateTimeFormat("ar-EG",{weekday:"long",day:"numeric",month:"long"});
 const fmtMonthY=new Intl.DateTimeFormat("ar-EG",{month:"long",year:"numeric"});
+const fmtWd=new Intl.DateTimeFormat("ar-EG",{weekday:"long"});
+/* "الخميس ١٩ نوفمبر ٢٠٢٦" — the one date text used on every register screen */
+function fullDate(s){const d=parseD(s);return fmtWd.format(d)+" "+ar(d.getDate())+" "+MONTHS[d.getMonth()]+" "+ar(d.getFullYear())}
+const shortDate=s=>ar(Number(s.slice(8)))+"/"+ar(Number(s.slice(5,7)))+"/"+ar(s.slice(0,4));
 const MONTHS=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 function norm(s){return String(s||"").replace(/[ً-ٰٟـ]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/\s+/g," ").trim().toLowerCase()}
 const cmpName=(a,b)=>a.n.localeCompare(b.n,"ar");
@@ -613,6 +639,17 @@ function absentCounts(gid,date){
   }
   return out;
 }
+/* The register's date is "today" unless the teacher opened another day. When the real day changes
+   (app resumed from the background, left open past midnight, or the next tap), jump to today's register:
+   yesterday's records stay as they were, and undo cannot reach back into the previous day. */
+let lastDay=todayStr();
+function checkDay(){
+  const t=todayStr();if(t===lastDay)return false;
+  lastDay=t;S.date=t;S.undo.att=[];S.absOnly=null;S.search=false;S.q="";
+  if(S.ready){syncWanted();if(S.screen==="att")mountView();else updateAll()}
+  toast("يوم جديد – تم فتح كشف اليوم");
+  return true;
+}
 function pushUndo(scope,u){const a=S.undo[scope];a.push(u);if(a.length>80)a.shift();renderDock()}
 
 /* =====================================================================
@@ -676,7 +713,9 @@ function lockFin(){
   syncWanted();
 }
 function bumpIdle(){if(!F.key)return;clearTimeout(F.idleT);F.idleT=setTimeout(()=>{lockFin();if(S.screen==="fin")mountView();toast("الحسابات اتقفلت تلقائيًا")},180000)}
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&F.key){lockFin();if(S.screen==="fin")mountView()}if(!document.hidden){kick(0)}});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&F.key){lockFin();if(S.screen==="fin")mountView()}if(!document.hidden){checkDay();kick(0)}});
+window.addEventListener("focus",()=>checkDay());
+setInterval(()=>{if(!document.hidden)checkDay()},60000);
 document.addEventListener("pointerdown",bumpIdle,{passive:true});
 
 const finV=()=>view("fin")||{};
@@ -806,7 +845,7 @@ UPDATE.att=()=>{
   $("#ahead").hidden=!g;
   if(!g){gridEl.className="";gridEl.innerHTML=welcomeHtml();return}
   const isToday=S.date===todayStr();
-  $("#dlabel").textContent=fmtDay.format(parseD(S.date))+" "+ar(S.date.slice(0,4));
+  $("#dlabel").textContent=fullDate(S.date);
   $("#dtag").hidden=!isToday;$("#dtoday").hidden=isToday;
   const dp=$("#dpick");if(dp.value!==S.date)dp.value=S.date;
   $("#sbar").hidden=!S.search;
@@ -839,7 +878,8 @@ UPDATE.att=()=>{
 function updatePhoneHead(g,total,present,absent,pct,isToday){
   const G=$("#phG");if(!G)return;
   G.textContent=g?g.n:"";
-  const d=parseD(S.date);$("#phD").textContent=isToday?"النهارده "+ar(d.getDate())+"/"+ar(d.getMonth()+1):fmtDay.format(d);
+  const d=parseD(S.date);
+  $("#phD").innerHTML='<span class="wd">'+(isToday?"النهارده · ":"كشف قديم · ")+esc(fmtWd.format(d))+'</span><span class="dt">'+ar(d.getDate())+" "+MONTHS[d.getMonth()]+" "+ar(d.getFullYear())+'</span>';
   $("#phDw").classList.toggle("past",!isToday);const dp=$("#dpick2");if(dp&&dp.value!==S.date)dp.value=S.date;
   const sy=$("#sync");
   $("#phS").innerHTML='<span class="g">✓ '+ar(present)+' حاضر</span><span class="r">'+ar(absent)+' غائب</span><span class="m">'+ar(pct)+'٪ من '+ar(total)+'</span><span class="sp"></span><span class="'+(sy?sy.className:"sync")+'"><i></i>'+esc(sy?sy.lastChild.textContent:"")+'</span>';
@@ -879,12 +919,22 @@ function toggleStudent(sid){
 MOUNT.stu=()=>
   '<div id="banner"></div><div id="shead"></div>'+
   '<form class="addbar" data-form="addstu" id="addbar"><input id="newStu" name="n" maxlength="80" autocomplete="off" enterkeyhint="done" placeholder="اسم الطالب الجديد" aria-label="اسم الطالب"><button class="btn primary" type="submit">'+I.plus+'إضافة</button><button type="button" class="btn" data-act="bulk">لصق قائمة أسماء</button></form>'+
+  '<div class="stusearch" id="stusearch"><input id="stuQ" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث عن طالب لمراجعة سجله" aria-label="بحث عن طالب"></div>'+
   '<div id="slist"></div>';
 UPDATE.stu=()=>{
   renderBanner();
   const g=curGroup(),head=$("#shead"),lst=$("#slist");if(!head)return;
-  $("#addbar").hidden=!g;
+  $("#addbar").hidden=!g;$("#stusearch").hidden=!g;
   if(!g){head.innerHTML="";lst.innerHTML=welcomeHtml();return}
+  const sq=norm(S.stuQ||"");
+  if(sq){
+    // search all groups: tap a result to open the student's record
+    const found=allStudents().filter(x=>!x.x&&x.n&&(core().groups||{})[x.g]&&!(core().groups||{})[x.g].x&&norm(x.n).indexOf(sq)>=0).sort(cmpName);
+    let r=found.length?'<div class="rows">':'<div class="empty">مفيش طالب بالاسم ده.</div>';
+    found.forEach(x=>{const gg=(core().groups||{})[x.g];r+='<div class="row"><button type="button" class="who" data-act="student" data-id="'+x.id+'" style="border:none;background:none;text-align:start;padding:.3rem 0;min-height:3rem"><b>'+esc(x.n)+'</b><small>'+esc(gg?gg.n:"")+' — اضغط لسجل الحضور والغياب</small></button><button type="button" class="ibtn" data-act="student" data-id="'+x.id+'" aria-label="السجل">'+I.edit+'</button></div>'});
+    if(found.length)r+='</div>';
+    setHTML(head,'');setHTML(lst,r);return;
+  }
   const list=roster(g.id),manual=((core().groups||{})[g.id]||{}).s==="m";
   const hh='<div class="bar"><div class="grow"><h2 class="title">'+esc(g.n)+'</h2><div class="sub">'+ar(list.length)+' طالب</div></div>'+
     '<div class="seg" role="group" aria-label="الترتيب"><button type="button" data-act="sort" data-v="a" aria-pressed="'+!manual+'">ترتيب أبجدي</button><button type="button" data-act="sort" data-v="m" aria-pressed="'+manual+'">ترتيب يدوي</button></div>'+
@@ -1126,6 +1176,7 @@ UPDATE.set=()=>{
     '<div class="note">كل البيانات <b>محفوظة على الجهاز ده</b> (السبورة أو الموبايل) والتطبيق مش محتاج نت. مفيش مزامنة تلقائية بين الأجهزة.</div>'+
     '<div class="note"><b>عشان تنقل البيانات بين السبورة والموبايل:</b> اعمل «تنزيل نسخة احتياطية» على جهاز وابعتها لنفسك على واتساب أو Drive، وبعدين اعمل «استرجاع من ملف» على الجهاز التاني. الاسترجاع بيدمج ومش بيمسح حاجة.</div>'+
     '<div class="note"><b>مهم:</b> لو مسحت التطبيق أو بياناته من إعدادات أندرويد، البيانات هتضيع. اعمل نسخة احتياطية كل أسبوع.'+(LS.get("k2:lastbk")?' آخر نسخة: '+esc(new Date(LS.get("k2:lastbk")).toLocaleDateString("ar-EG")):'')+'</div>'+
+    (LS.get("k2:autobk")&&LS.get("k2:autobk").name?'<div class="note">نسخة تلقائية اتعملت قبل التحديث لـ v'+esc(LS.get("k2:autobk").to)+': <b>'+esc(LS.get("k2:autobk").name)+'</b>'+(LS.get("k2:autobk").pub?' في Documents/Kashf':'')+'.</div>':'')+
   '</section>':
   '<section class="panel"><h3>المزامنة بين الأجهزة</h3>'+
     '<div class="line"><div class="txt"><b>'+$("#sync").lastChild.textContent+'</b><span class="sub">'+(cloud?"كل تعديل بيوصل لأجهزتك التانية لحظيًا.":"مفيش حساب على الجهاز ده.")+'</span></div><button type="button" class="btn sm" data-act="syncnow">مزامنة الآن</button></div>'+
@@ -1171,7 +1222,7 @@ function renderSheet(){
     const g=curGroup();if(!g){closeSheet();return}
     const list=roster(g.id),dm=dayMap(g.id,S.date),abs=list.filter(x=>dm[x.id]!==1),pr=list.length-abs.length,pct=list.length?Math.round(pr/list.length*100):0;
     const sy=$("#sync"),saved=!Sync.outbox.length;
-    h='<div class="finish" style="display:flex;flex-direction:column;gap:.9rem"><h2>'+esc(g.n)+' — '+esc(fmtDay.format(parseD(S.date)))+'</h2>'+
+    h='<div class="finish" style="display:flex;flex-direction:column;gap:.9rem"><h2>'+esc(g.n)+' — '+esc(fullDate(S.date))+'</h2>'+
       '<div class="big3"><div><span class="sub">حاضر</span><b style="color:var(--ok-text)">'+ar(pr)+'</b></div><div><span class="sub">غائب</span><b style="color:var(--bad-text)">'+ar(abs.length)+'</b></div><div><span class="sub">النسبة</span><b>'+ar(pct)+'٪</b></div></div>'+
       '<div class="'+(sy?sy.className:"sync")+'" style="font-size:.92rem;white-space:normal;align-items:flex-start"><i style="margin-top:.4rem"></i><span>'+(saved?"الكشف محفوظ ✓ تلقائيًا، مش محتاج تضغط حفظ":"بيحفظ…")+'</span></div>'+
       (abs.length?'<div class="sub">الغائبين:</div><div class="names">'+abs.map(x=>'<span>'+esc(x.n)+'</span>').join("")+'</div>':'<div class="sub">مفيش غياب النهارده 👏</div>')+
@@ -1219,30 +1270,66 @@ function renderSheet(){
   }
   host.innerHTML='<div class="ov" data-act="ovclose"><div class="sheet'+(wide?" wide":"")+'" role="dialog" aria-modal="true">'+h+'</div></div>';
 }
+/* ---- attendance record of one student ----
+   A day counts only if that group's register was taken that day (at least one student marked
+   present). On such a day the student is present if marked, absent if he was on that group's list
+   (explicitly marked absent, or a member of the group since before that day). Days with no register
+   are neither present nor absent. */
+async function attendanceDocs(){
+  let list=[];try{list=await withTimeout(Sync.be.list(),15000)}catch(e){}
+  const out={};
+  list.forEach(([n,d])=>{if(n.indexOf("a-")===0&&isObj(d))out[n]=clone(d)});
+  if(Sync.be.kind!=="local")LS.keys(ckeyPrefix()).forEach(k=>{const n=k.slice(ckeyPrefix().length);if(n.indexOf("a-")===0&&!out[n]){const c=LS.get(k);if(c&&isObj(c.d))out[n]=clone(c.d)}});
+  Object.keys(Sync.docs).forEach(n=>{if(n.indexOf("a-")===0){const v=view(n);if(v)out[n]=clone(v)}});
+  Sync.outbox.forEach(op=>{if(op.n.indexOf("a-")===0)out[op.n]=merge(out[op.n]||{},op.p)});
+  return out;
+}
+const ckeyPrefix=()=>"k2:c:"+Sync.uid+":";
+function studentRecords(st,docs){
+  // membership: current group from max(created, joined); any other group from his first to his last
+  // explicit mark there (or until he joined the current group, if that is known)
+  const since=[st.c||"",st.gs||""].sort().pop(),days=[],span={};
+  for(const n of Object.keys(docs)){
+    const m=n.match(/^a-(.+)-(\d{4}-\d{2})$/);if(!m)continue;
+    const gid=m[1],mk=m[2],d=(docs[n]&&docs[n].d)||{};
+    for(const dd of Object.keys(d)){
+      const day=d[dd];if(!isObj(day))continue;const date=mk+"-"+dd;
+      if(st.id in day){const sp=span[gid]||(span[gid]={a:date,b:date});if(date<sp.a)sp.a=date;if(date>sp.b)sp.b=date}
+      if(Object.keys(day).some(k=>day[k]===1))days.push({gid:gid,date:date,v:day[st.id]});
+    }
+  }
+  const member=(gid,date)=>{
+    if(gid===st.g)return !since||date>=since;
+    const sp=span[gid];if(!sp)return false;
+    return date>=sp.a&&(st.gs?date<st.gs:date<=sp.b);
+  };
+  const rows=[];
+  days.forEach(x=>{if(x.v===1)rows.push({date:x.date,gid:x.gid,s:1});else if(x.v===0||member(x.gid,x.date))rows.push({date:x.date,gid:x.gid,s:0})});
+  return rows.sort((a,b)=>b.date<a.date?-1:b.date>a.date?1:0);
+}
 function histHtml(st,s){
-  const mk=s.hm||S.date.slice(0,7);const data=s.hdata;
-  let h='<div class="bar" style="margin:1.2rem 0 .6rem"><h3 style="margin:0;font-family:var(--display)" class="grow">سجل الحضور</h3><button type="button" class="dn-btn" data-act="hm" data-d="-1" aria-label="الشهر السابق">'+I.chevR+'</button><b>'+esc(fmtMonthY.format(parseD(mk+"-01")))+'</b><button type="button" class="dn-btn" data-act="hm" data-d="1" aria-label="الشهر التالي">'+I.chevL+'</button></div>';
-  if(!data)return h+'<div class="sub">بيحمّل…</div>';
-  const pres=[],absn=[];
-  Object.keys(data).sort().forEach(dd=>{const v=data[dd];if(v===1)pres.push(dd);else if(v===0)absn.push(dd)});
-  if(!pres.length&&!absn.length)return h+'<div class="sub">مفيش حصص متسجلة له في الشهر ده.</div>';
-  const tot=pres.length+absn.length;
-  h+='<div class="sub" style="margin-bottom:.6rem">حضر '+times(pres.length)+'، غاب '+times(absn.length)+' — نسبة الحضور '+ar(Math.round(pres.length/tot*100))+'٪</div><div class="days">';
-  Object.keys(data).sort().forEach(dd=>{if(data[dd]===1||data[dd]===0)h+='<span class="'+(data[dd]===1?"p":"a")+'" title="'+(data[dd]===1?"حاضر":"غائب")+'">'+ar(Number(dd))+'</span>'});
-  return h+'</div>';
+  let h='<section class="hist"><h3>سجل الحضور والغياب</h3>';
+  if(!s.hrows)return h+'<div class="sub">بيحمّل…</div></section>';
+  const mk=s.hm||S.date.slice(0,7),mode=s.hmode||"all";
+  const rows=mode==="month"?s.hrows.filter(r=>r.date.slice(0,7)===mk):s.hrows;
+  const pr=rows.filter(r=>r.s===1).length,ab=rows.length-pr,pct=rows.length?Math.round(pr/rows.length*100):null;
+  const multi=new Set(s.hrows.map(r=>r.gid)).size>1,gname=gid=>{const g=(core().groups||{})[gid];return g?g.n:"مجموعة محذوفة"};
+  h+='<div class="hfil"><div class="seg"><button type="button" data-act="hmode" data-v="all" aria-pressed="'+(mode==="all")+'">كل السجلات</button><button type="button" data-act="hmode" data-v="month" aria-pressed="'+(mode==="month")+'">شهر معيّن</button></div>'+
+    (mode==="month"?'<div class="hmon"><button type="button" class="dn-btn" data-act="hm" data-d="-1" aria-label="الشهر السابق">'+I.chevR+'</button><b>'+esc(fmtMonthY.format(parseD(mk+"-01")))+'</b><button type="button" class="dn-btn" data-act="hm" data-d="1" aria-label="الشهر التالي">'+I.chevL+'</button></div>':'')+'</div>';
+  h+='<div class="hstats"><div><span>حضور</span><b class="g">'+ar(pr)+'</b></div><div><span>غياب</span><b class="r">'+ar(ab)+'</b></div><div><span>نسبة الحضور</span><b>'+(pct===null?"—":ar(pct)+"٪")+'</b></div><div><span>أيام متسجلة</span><b>'+ar(rows.length)+'</b></div></div>';
+  if(!rows.length)h+='<div class="sub">'+(mode==="month"?"مفيش كشف متسجل له في الشهر ده.":"لسه مفيش كشف متسجل للطالب ده.")+'</div>';
+  else{
+    h+='<div class="htable" role="table"><div class="hrow hhead" role="row"><span>التاريخ</span><span>الحالة</span>'+(multi?'<span>المجموعة</span>':'')+'</div>';
+    rows.forEach(r=>{h+='<div class="hrow" role="row"><span>'+shortDate(r.date)+' <small>'+esc(fmtWd.format(parseD(r.date)))+'</small></span><span class="'+(r.s?"pp":"aa")+'">'+(r.s?"حاضر":"غائب")+'</span>'+(multi?'<span class="hg">'+esc(gname(r.gid))+'</span>':'')+'</div>'});
+    h+='</div>';
+  }
+  return h+'<div class="note">الأيام اللي متسجلش فيها كشف للمجموعة مش بتتحسب حضور ولا غياب.</div></section>';
 }
 async function loadHistory(){
   const s=S.sheet;if(!s||s.type!=="student")return;const st=student(s.id);if(!st)return;
-  const mk=s.hm||S.date.slice(0,7);s.hdata=null;
-  const gids=Object.keys(core().groups||{});const out={};
-  for(const gid of gids){
-    const n="a-"+gid+"-"+mk;let v=D(n).unsub&&D(n).known?view(n):null;
-    if(!v){try{v=await withTimeout(Sync.be.get(n),8000);if(v)LS.set(ckey(n),{d:v})}catch(e){const c=LS.get(ckey(n));v=c?c.d:null}}
-    const d=v&&v.d;if(!d)continue;
-    for(const dd of Object.keys(d)){const m=d[dd];if(!Object.keys(m).some(k=>m[k]===1))continue;
-      const x=m[st.id];if(x===1)out[dd]=1;else if(out[dd]!==1&&gid===st.g&&(!st.c||st.c<=mk+"-"+dd))out[dd]=0}
-  }
-  if(S.sheet===s&&(s.hm||S.date.slice(0,7))===mk){s.hdata=out;const el=$("#hist");if(el)el.innerHTML=histHtml(st,s)}
+  const docs=await attendanceDocs();
+  if(S.sheet!==s)return;
+  s.hrows=studentRecords(st,docs);const el=$("#hist");if(el)el.innerHTML=histHtml(st,s);
 }
 function openAmount(o){openSheetRaw(Object.assign({type:"amount",fin:true},o))}
 function showRecovery(code){openSheetRaw({type:"recovery",code:code,fin:true})}
@@ -1277,6 +1364,7 @@ async function doUndo(){
 document.addEventListener("click",async ev=>{
   const el=ev.target.closest("[data-act]");if(!el)return;
   const a=el.dataset.act,id=el.dataset.id;
+  if((a==="tog"||a==="allpresent"||a==="clearday"||a==="undo"||a==="absonly"||a==="finish")&&S.screen==="att"&&checkDay())return;
   switch(a){
     case "ovclose":if(ev.target===el&&!(S.sheet&&S.sheet.type==="recovery"))closeSheet();return;
     case "close":closeSheet();return;
@@ -1317,7 +1405,7 @@ document.addEventListener("click",async ev=>{
     case "copyabs":{
       const g=curGroup();if(!g)return;const dm=dayMap(g.id,S.date);const names=roster(g.id).filter(s=>dm[s.id]!==1).map((s,i)=>ar(i+1)+". "+s.n);
       copyText("غياب "+g.n+" — "+fmtDay.format(parseD(S.date))+":\n"+(names.join("\n")||"مفيش غياب"));return}
-    case "quickgroup":createGroup(el.dataset.n);setScreen("stu");setTimeout(()=>{const i=$("#newStu");if(i)i.focus()},50);return;
+    case "quickgroup":createGroup(el.dataset.n);setScreen("stu");setTimeout(()=>{const i=$("#newStu");if(i&&!S.sheet)i.focus()},50);return;
     case "newgroup":openSheetRaw({type:"group"});return;
     case "editgroup":openSheetRaw({type:"group",id:S.gid});return;
     case "fillname":{const i=$("#gName");if(i)i.value=el.dataset.n;return}
@@ -1329,7 +1417,8 @@ document.addEventListener("click",async ev=>{
     case "bulk":openSheetRaw({type:"bulk"});setTimeout(()=>{const t=$("#bulkN");if(t)t.focus()},30);return;
     case "student":openSheetRaw({type:"student",id:id});loadHistory();return;
     case "pickg":S.sheet.g=id;$$('.sheet [data-act="pickg"]').forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.id===id)));return;
-    case "hm":{const s=S.sheet;const d=parseD((s.hm||S.date.slice(0,7))+"-01");d.setMonth(d.getMonth()+Number(el.dataset.d));s.hm=ymd(d).slice(0,7);s.hdata=null;const h=$("#hist");const st=student(s.id);if(h&&st)h.innerHTML=histHtml(st,s);loadHistory();return}
+    case "hm":{const s=S.sheet;const d=parseD((s.hm||S.date.slice(0,7))+"-01");d.setMonth(d.getMonth()+Number(el.dataset.d));s.hm=ymd(d).slice(0,7);const h=$("#hist");const st=student(s.id);if(h&&st)h.innerHTML=histHtml(st,s);return}
+    case "hmode":{const s=S.sheet;s.hmode=el.dataset.v;const h=$("#hist");const st=student(s.id);if(h&&st)h.innerHTML=histHtml(st,s);return}
     case "delstu":{const st=student(id);if(!st)return;write("core",{students:{[id]:{x:Date.now()}}});closeSheet();toast("اتحذف "+st.n,()=>{write("core",{students:{[id]:{x:0}}})});return}
     case "restore":write("core",{students:{[id]:{x:0}}});toast("رجع للمجموعة");return;
     case "pinsetup":S.pp=newPP("setup");updateAll();return;
@@ -1380,6 +1469,7 @@ document.addEventListener("click",async ev=>{
   }
 });
 document.addEventListener("input",ev=>{
+  if(ev.target.id==="stuQ"){S.stuQ=ev.target.value;UPDATE.stu();return}
   if(ev.target.id==="q"){S.q=ev.target.value;UPDATE.att()}
 });
 document.addEventListener("change",async ev=>{
@@ -1406,7 +1496,7 @@ document.addEventListener("submit",async ev=>{
   if(kind==="student"){
     const st=student(f.dataset.id);if(!st)return;const n=String(fd.get("n")||"").trim();if(!n)return;
     const p={n:n,ph:String(fd.get("ph")||"").trim()};const ng=S.sheet&&S.sheet.g;
-    let moved=false;if(ng&&ng!==st.g&&(core().groups||{})[ng]){p.g=ng;p.o=nextOrder(ng);moved=true}
+    let moved=false;if(ng&&ng!==st.g&&(core().groups||{})[ng]){p.g=ng;p.o=nextOrder(ng);p.gs=todayStr();moved=true}
     write("core",{students:{[st.id]:p}});closeSheet();
     if(moved){const g=(core().groups||{})[ng];toast("اتنقل لـ "+(g?g.n:""))}return;
   }
@@ -1542,6 +1632,7 @@ async function boot(){
     LS.keys("k2:l:").forEach(k=>{const v=LS.get(k);if(isObj(v))write(k.slice(5),v)});LS.set("k2:adopted:"+Sync.uid,1);
   }
   S.ready=true;curGroup();mountView();kick(0);
+  upgradeSnapshot();
   setInterval(()=>{if(Sync.outbox.length&&!Sync.flushing)kick(0)},20000);
 }
 /* Close the Android app: lock finance, make sure every pending save reached the device files, then exit. */
@@ -1552,9 +1643,33 @@ async function exitApp(){
   for(let i=0;i<40&&(Durable.busy.size||Durable.pend.size);i++)await sleep(50);
   const A=Plug("App");if(A&&A.exitApp)A.exitApp();
 }
-window.__kashf={S:S,Sync:Sync,F:F,view:view,NATIVE:NATIVE,importData:doImport};
+/* Android: the first launch of a new app version saves a full copy of the data before anything else
+   happens, checks that the copy reads back complete, and only then records the new version.
+   Nothing is converted: the storage format is the same, so the copy is pure insurance.
+   The file goes to Documents/Kashf (restorable with "استرجاع من ملف") and inside the app. */
+async function upgradeSnapshot(){
+  if(!NATIVE)return;
+  const A=Plug("App"),FS=Plug("Filesystem");if(!A||!A.getInfo||!FS)return;
+  let info;try{info=await A.getInfo()}catch(e){return}
+  const ver=String(info.version||""),prev=LS.get("k2:appver");
+  if(!ver||prev===ver)return;
+  if(!allStudents().length&&!groupsList().length){LS.set("k2:appver",ver);return}
+  try{
+    const docs=await allDocs();const n=Object.keys(docs).length;
+    const data=JSON.stringify({app:"kashf",v:2,at:new Date().toISOString(),auto:true,from:prev||"قبل ١٫٠٫٩",to:ver,docs:docs});
+    const name="kashf-auto-before-v"+ver+"-"+todayStr()+".json";
+    await FS.writeFile({path:"auto-backups/"+name,data:data,directory:"DATA",encoding:"utf8",recursive:true});
+    const back=JSON.parse((await FS.readFile({path:"auto-backups/"+name,directory:"DATA",encoding:"utf8"})).data);
+    if(!back||!back.docs||Object.keys(back.docs).length!==n||JSON.stringify(back.docs.core)!==JSON.stringify(docs.core))throw new Error("verify");
+    let pub=false;try{await FS.writeFile({path:"Kashf/"+name,data:data,directory:"DOCUMENTS",encoding:"utf8",recursive:true});pub=true}catch(e){}
+    LS.set("k2:autobk",{name:name,at:Date.now(),docs:n,pub:pub,from:prev||null,to:ver});
+    LS.set("k2:appver",ver);
+  }catch(e){LS.set("k2:autobk",{error:String(e&&e.message||e),at:Date.now(),to:ver})}
+}
+window.__kashf={S:S,Sync:Sync,F:F,view:view,NATIVE:NATIVE,importData:doImport,upgradeSnapshot:upgradeSnapshot};
 if(NATIVE){
   const A=Plug("App");
+  if(A&&A.addListener){A.addListener("resume",()=>checkDay());A.addListener("appStateChange",st=>{if(st&&st.isActive)checkDay()})}
   if(A&&A.addListener)A.addListener("backButton",()=>{
     if(S.sheet){if(S.sheet.type!=="recovery")closeSheet();return}
     if(S.search){S.search=false;S.q="";updateAll();return}

@@ -24,6 +24,7 @@ adb uninstall $PKG >/dev/null 2>&1 || true
 adb install -r out/kashf-debug.apk
 adb logcat -c || true
 python3 tests/android_e2e.py report; RC=$?
+python3 tests/upgrade_e2e.py report || RC=1
 adb logcat -d -v time > report/logcat-full.txt 2>/dev/null || true
 grep -E "kashf|chromium|Capacitor|ActivityManager|AndroidRuntime|WebView|lowmemory|libc|DEBUG" report/logcat-full.txt | tail -3000 > report/logcat.txt || true
 rm -f report/logcat-full.txt
