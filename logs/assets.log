@@ -1,0 +1,81 @@
+[log] xml(load) at /home/runner/work/kashf-android/kashf-android/android/app/src/main/AndroidManifest.xml
+[log] xml(load) Found root namespaces in XML file: http://schemas.android.com/apk/res/android
+Generating assets for android
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-ldpi/ic_launcher.png (1.13 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-mdpi/ic_launcher.png (1.9 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-hdpi/ic_launcher.png (3.21 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png (4.27 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png (6.6 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png (8.93 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-ldpi/ic_launcher_round.png (2.05 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png (2.74 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png (3.92 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png (5.12 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png (7.25 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png (9.25 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-ldpi/ic_launcher_foreground.png (586 B)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png (704 B)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png (966 B)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png (1.25 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png (1.93 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png (2.47 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-ldpi/ic_launcher_background.png (467 B)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-mdpi/ic_launcher_background.png (585 B)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-hdpi/ic_launcher_background.png (817 B)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xhdpi/ic_launcher_background.png (1.12 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_background.png (1.77 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_background.png (2.46 KB)
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+CREATE android icon /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable/splash.png (10.15 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-ldpi/splash.png (6.32 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-mdpi/splash.png (9.88 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-hdpi/splash.png (21.75 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-xhdpi/splash.png (48.1 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-xxhdpi/splash.png (77.56 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-xxxhdpi/splash.png (117.31 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-ldpi/splash.png (6.44 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-mdpi/splash.png (10.15 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-hdpi/splash.png (21.34 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-xhdpi/splash.png (46.08 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-xxhdpi/splash.png (74.67 KB)
+CREATE android splash /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-xxxhdpi/splash.png (116.31 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-night/splash.png (3.95 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-night-ldpi/splash.png (3.95 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-night-mdpi/splash.png (6.52 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-night-hdpi/splash.png (12.99 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-night-xhdpi/splash.png (25.71 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-night-xxhdpi/splash.png (39.91 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-land-night-xxxhdpi/splash.png (59.3 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-night-ldpi/splash.png (4.1 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-night-mdpi/splash.png (6.42 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-night-hdpi/splash.png (13.69 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-night-xhdpi/splash.png (28.32 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-night-xxhdpi/splash.png (40.81 KB)
+CREATE android splash-dark /home/runner/work/kashf-android/kashf-android/android/app/src/main/res/drawable-port-night-xxxhdpi/splash.png (60.46 KB)
+
+
+Totals:
+android: 74 generated, 943.57 KB total
