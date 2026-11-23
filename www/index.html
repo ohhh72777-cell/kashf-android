@@ -351,6 +351,30 @@ details.del summary::-webkit-details-marker{display:none}
   .finish .big3 b{display:block;font-family:var(--display);font-size:1.8rem}
   .finish .names{max-height:32vh;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem}
   .finish .names span{padding:.45rem .7rem;border-radius:.6rem;background:var(--bad-soft);color:var(--bad-text);font-weight:700}
+
+  /* finance: the group chips, month chips, six stat boxes and two toggles used to fill most of the
+     screen. On the phone they fold into one compact sticky header (like attendance), so the list of
+     students gets the screen. Rarely used controls live in the month sheet and the thumb bar. */
+  body.scr-fin header.top{display:none}
+  body.scr-fin main#view{padding-top:0}
+  .ph-month{flex:none;max-width:45%;min-height:2.9rem;border-radius:.9rem;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:.35rem;padding:.2rem .7rem;font-weight:700;text-align:start}
+  .ph-month .mw{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+  .ph-month .wd{font-size:.72rem;font-weight:600;color:var(--muted)}
+  .ph-month .dt{font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ph-month svg{width:1rem;height:1rem;flex:none;color:var(--muted)}
+  .fhead .ph-stats{flex-wrap:wrap;gap:.15rem .8rem}
+  .fhead .ph-stats .w{color:var(--warn-text)}
+  .fhead .ph-row.f2{gap:.4rem}
+  .fseg{flex:1;display:flex;min-width:0}
+  .fseg button{flex:1 1 0;min-width:0;min-height:2.6rem;padding:0 .4rem;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fcopy{flex:none;width:2.9rem;height:2.9rem;border-radius:.9rem;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
+  .fcopy svg{width:1.25rem;height:1.25rem}
+  .fwarn{width:100%;border:1.5px solid var(--warn);background:var(--warn-soft);color:var(--warn-text);min-height:2.7rem;text-align:start}
+  .fwarn b{flex:none;background:var(--surface);color:var(--ink);border-radius:.7rem;padding:.3rem .9rem}
+  .actions.thumb3{grid-template-columns:repeat(3,1fr)}
+  /* names may wrap to two lines, so the month column always stays on screen */
+  .mrow{min-width:min-content}
+  .actions.thumb .btn.fmode[aria-pressed="true"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn-text)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -781,7 +805,7 @@ function fitTabs(){
 }
 function renderDock(){
   const a=$("#actions");let h="";
-  a.className="actions"+(S.ready&&S.screen==="att"&&isPhone()&&curGroup()?" thumb":"");
+  a.className="actions"+(S.ready&&S.screen==="att"&&isPhone()&&curGroup()?" thumb":"")+(S.ready&&S.screen==="fin"&&F.key&&isPhone()?" thumb thumb3":"");
   if(!S.ready){a.innerHTML="";return}
   const g=curGroup();
   if(S.screen==="att"&&g&&isPhone()){
@@ -798,6 +822,11 @@ function renderDock(){
     h+='<button type="button" class="btn" data-act="search"'+(S.search?' aria-pressed="true"':'')+'>'+I.search+'بحث</button>';
     h+='<button type="button" class="btn sm ghost" data-act="copyabs">'+I.copy+'نسخ الغائبين</button>';
     h+='<button type="button" class="btn sm ghost" data-act="clearday">'+I.eraser+'مسح اليوم</button>';
+  }else if(S.screen==="fin"&&F.key&&isPhone()){
+    const nU=S.undo.fin.length,amt=S.fin.mode==="amt";
+    h+='<button type="button" class="btn" data-act="undo"'+(nU?'':' disabled')+'>'+I.undo+'تراجع'+(nU?'<span class="badge">'+ar(nU)+'</span>':'')+'</button>';
+    h+='<button type="button" class="btn fmode" data-act="fmode" data-v="'+(amt?"tap":"amt")+'" aria-pressed="'+amt+'">'+(amt?I.edit+'ضغطة = مبلغ':I.check+'ضغطة = دفع كامل')+'</button>';
+    h+='<button type="button" class="btn danger" data-act="lock">'+I.lock+'قفل الحسابات</button>';
   }else if(S.screen==="fin"&&F.key){
     const nU=S.undo.fin.length;
     h+='<button type="button" class="btn" data-act="undo"'+(nU?'':' disabled')+'>'+I.undo+'تراجع'+(nU?'<span class="badge">'+ar(nU)+'</span>':'')+'</button>';
@@ -1006,6 +1035,7 @@ UPDATE.fin=()=>{
   if(S.fin.mid&&!F.pending.size&&!months.some(m=>m.id===S.fin.mid))S.fin.mid=null;
   if(!S.fin.mid&&months.length)S.fin.mid=months[months.length-1].id;
   const list=roster(g.id),gf=gFee(g.id),mid=S.fin.mid;
+  if(isPhone()){finPhone(w,g,months,list);return}
   let h='<div class="fbar"><button type="button" class="btn" data-act="gfee">اشتراك المجموعة: <b>'+(gf?money(gf):"مش محدد")+'</b></button>'+
     '<div class="mchips">'+months.map(m=>'<button type="button" class="mchip" data-act="month" data-id="'+m.id+'" aria-pressed="'+(m.id===mid)+'">'+esc(m.n)+'</button>').join("")+
     '<button type="button" class="mchip add" data-act="newmonth">+ شهر جديد</button></div></div>';
@@ -1026,10 +1056,15 @@ UPDATE.fin=()=>{
     '<div class="seg" role="group" aria-label="عرض"><button type="button" data-act="ffilter" data-v="all" aria-pressed="'+(S.fin.filter==="all")+'">الكل</button><button type="button" data-act="ffilter" data-v="late" aria-pressed="'+(S.fin.filter==="late")+'">المتأخرين ('+ar(late)+')</button></div>'+
     (late?'<button type="button" class="btn sm" data-act="copylate">'+I.copy+'نسخ أسماء المتأخرين</button>':'')+
     '</div></div>';
+  h+=finMatrix(list,months,mid);
+  setHTML(w,h);
+};
+/* the students × months list: shared by the board and the phone */
+function finMatrix(list,months,mid){
   const shown=S.fin.filter==="late"?list.filter(s=>payState(payOf(mid,s.id),feeOf(s))!=="paid"):list;
   const narrow=window.innerWidth<760;
-  const tpl=narrow?'grid-template-columns:minmax(7.5rem,1fr) 5.4rem repeat('+months.length+',6.6rem)':'grid-template-columns:2.6rem minmax(14rem,1fr) 8rem repeat('+months.length+',minmax(8.5rem,11rem))';
-  h+='<div class="matrix"><div class="mrow mhead" style="'+tpl+'">'+(narrow?'':'<span class="mno">#</span>')+'<span class="mname">الطالب</span><span style="justify-content:center">الاشتراك</span>'+
+  const tpl=narrow?'grid-template-columns:minmax(6rem,1fr) 4.8rem repeat('+months.length+',6rem)':'grid-template-columns:2.6rem minmax(14rem,1fr) 8rem repeat('+months.length+',minmax(8.5rem,11rem))';
+  let h='<div class="matrix"><div class="mrow mhead" style="'+tpl+'">'+(narrow?'':'<span class="mno">#</span>')+'<span class="mname">الطالب</span><span style="justify-content:center">الاشتراك</span>'+
     months.map(m=>'<button type="button" class="mhcell" data-act="month" data-id="'+m.id+'" aria-pressed="'+(m.id===mid)+'">'+esc(m.n)+'</button>').join("")+'</div>';
   if(!shown.length)h+='<div class="empty" style="border:none">كل المجموعة دفعت الشهر ده.</div>';
   shown.forEach(s=>{
@@ -1043,9 +1078,36 @@ UPDATE.fin=()=>{
     });
     h+='</div>';
   });
+  return h+'</div>';
+}
+/* phone finance: one compact sticky header, then the list fills the rest of the screen */
+function finCounts(list,mid){
+  const o={total:list.length,col:0,exp:0,paid:0,part:0,none:0};
+  list.forEach(s=>{const f=feeOf(s),p=payOf(mid,s.id),st=payState(p,f);o.exp+=f;if(p)o.col+=p.a||0;if(st==="paid")o.paid++;else if(st==="part")o.part++;else o.none++});
+  o.late=o.part+o.none;return o;
+}
+function finPhone(w,g,months,list){
+  const mid=S.fin.mid,gf=gFee(g.id);
+  let h='<div class="phead fhead" id="fhead"><div class="ph-row">'+
+    '<button type="button" class="ph-group" data-act="pickgroup" aria-label="اختيار المجموعة"><b>'+esc(g.n)+'</b>'+I.down2+'</button>'+
+    '<button type="button" class="ph-month" data-act="'+(months.length?"pickmonth":"newmonth")+'" aria-label="اختيار الشهر"><span class="mw"><span class="wd">الشهر</span><span class="dt">'+(mid?esc(monthName(mid)):"+ شهر جديد")+'</span></span>'+I.down2+'</button></div>';
+  if(!gf&&list.length)h+='<button type="button" class="pfilter fwarn" data-act="gfee"><span>اشتراك المجموعة مش محدد</span><b>حدّده</b></button>';
+  if(months.length&&list.length){
+    const o=finCounts(list,mid),pct=o.exp?Math.min(100,Math.round(o.col/o.exp*100)):Math.round(o.paid/o.total*100);
+    h+='<div class="ph-stats"><span class="g">✓ '+ar(o.paid)+' دفعوا</span><span class="r">'+ar(o.late)+' متأخر</span>'+(o.part?'<span class="w">'+ar(o.part)+' جزئي</span>':'')+
+      '<span class="sp"></span><span class="m">'+money(o.col)+' من '+money(o.exp)+'</span></div>'+
+      '<div class="ph-bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="ph-row f2"><div class="seg fseg" role="group" aria-label="عرض">'+
+        '<button type="button" data-act="ffilter" data-v="all" aria-pressed="'+(S.fin.filter==="all")+'">الكل ('+ar(o.total)+')</button>'+
+        '<button type="button" data-act="ffilter" data-v="late" aria-pressed="'+(S.fin.filter==="late")+'">المتأخرين ('+ar(o.late)+')</button></div>'+
+        (o.late?'<button type="button" class="fcopy" data-act="copylate" aria-label="نسخ أسماء المتأخرين">'+I.copy+'</button>':'')+'</div>';
+  }
   h+='</div>';
+  if(!months.length)h+='<div class="empty"><h2>ابدأ بأول شهر</h2><div>كل شهر بتعمله بيظهر عمود جديد قدام كل الطلاب.</div><div class="quick">'+monthQuick()+'</div></div>';
+  else if(!list.length)h+='<div class="empty">المجموعة دي مفيهاش طلاب.</div>';
+  else h+=finMatrix(list,months,mid);
   setHTML(w,h);
-};
+}
 function monthQuick(){
   const now=new Date(),cur=now.getMonth();const order=[];for(let i=-1;i<11;i++)order.push((cur+i+12)%12);
   return order.map(i=>'<button type="button" class="btn" data-act="addmonth" data-n="'+MONTHS[i]+'">'+MONTHS[i]+'</button>').join("");
@@ -1217,6 +1279,16 @@ function renderSheet(){
     const gs=groupsList();
     h='<h2>اختار المجموعة</h2><div class="glist">'+gs.map(g=>'<button type="button" class="gchip" data-act="pickgroup2" data-id="'+g.id+'" aria-pressed="'+(g.id===S.gid)+'"><span>'+esc(g.n)+'</span><span class="sub" style="color:inherit;opacity:.75">'+ar(roster(g.id).length)+' طالب</span></button>').join("")+'</div>'+
       '<div class="acts"><button type="button" class="btn" data-act="close">إغلاق</button></div>';
+  }
+  else if(s.type==="fmonths"){
+    const g=curGroup();if(!g||!F.key){closeSheet();return}
+    const list=roster(g.id),months=finMonths().slice().reverse(),gf=gFee(g.id);
+    h='<h2>الشهر — '+esc(g.n)+'</h2><div class="glist">'+months.map(m=>{const o=finCounts(list,m.id);
+      return '<button type="button" class="gchip" data-act="fmonth2" data-id="'+m.id+'" aria-pressed="'+(m.id===S.fin.mid)+'"><span>'+esc(m.n)+'</span><span class="sub" style="color:inherit;opacity:.75">دفعوا '+ar(o.paid)+' من '+ar(o.total)+'</span></button>'}).join("")+'</div>'+
+      '<div class="acts"><button type="button" class="btn primary" data-act="newmonth">'+I.plus+'شهر جديد</button>'+
+      (S.fin.mid?'<button type="button" class="btn" data-act="month" data-id="'+S.fin.mid+'">'+I.edit+'تعديل اسم الشهر</button>':'')+
+      '<button type="button" class="btn" data-act="gfee">اشتراك المجموعة: <b>'+(gf?money(gf):"مش محدد")+'</b></button>'+
+      '<button type="button" class="btn" data-act="close">إغلاق</button></div>';
   }
   else if(s.type==="finish"){
     const g=curGroup();if(!g){closeSheet();return}
@@ -1399,7 +1471,9 @@ document.addEventListener("click",async ev=>{
     case "finish":openSheetRaw({type:"finish",live:true});return;
     case "finishreview":{closeSheet();const g=curGroup();if(!g)return;const dm=dayMap(g.id,S.date);S.absOnly=new Set(roster(g.id).filter(s=>dm[s.id]!==1).map(s=>s.id));if(!S.absOnly.size)S.absOnly=null;$("#view").scrollTop=0;updateAll();return}
     case "pickgroup":openSheetRaw({type:"groups"});return;
-    case "pickgroup2":closeSheet();S.gid=id;S.q="";S.absOnly=null;LS.set("k2:ui",{gid:id});syncWanted();$("#view").scrollTop=0;updateAll();return;
+    case "pickmonth":openSheetRaw({type:"fmonths",fin:true});return;
+    case "fmonth2":closeSheet();S.fin.mid=id;$("#view").scrollTop=0;updateAll();return;
+    case "pickgroup2":closeSheet();if(S.screen==="fin"&&F.key&&id!==S.gid)S.fin.filter="all";S.gid=id;S.q="";S.absOnly=null;LS.set("k2:ui",{gid:id});syncWanted();$("#view").scrollTop=0;updateAll();return;
     case "day":{const d=parseD(S.date);d.setDate(d.getDate()+Number(el.dataset.d));S.date=ymd(d);S.absOnly=null;syncWanted();updateAll();return}
     case "today":S.date=todayStr();syncWanted();updateAll();return;
     case "copyabs":{
