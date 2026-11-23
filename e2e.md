@@ -1,0 +1,32 @@
+# Android E2E: 30/30 passed
+
+- ✅ device — `Android API 34, ABI x86_64`
+- ✅ app opens directly (no browser), cold start ms — `2001`
+- ✅ running as native app, Capacitor plugins available — `['App', 'SplashScreen', 'Haptics', 'CapacitorCookies', 'WebView', 'Filesystem', 'Share', 'CapacitorHttp']`
+- ✅ WebView version — `Chrome/113.0.5672.136`
+- ✅ full screen (no browser bar) — `viewport 412x915, screen 412x915`
+- ✅ starts in device-storage mode
+- ✅ group + 40 students created
+- ✅ real finger taps mark students present — `[True, True, True]`
+- ✅ tap made right before the app was killed is kept
+- ✅ attendance survives killing the app — `[True, True, True, False]`
+- ✅ works in airplane mode
+- ✅ airplane-mode change still there after restart
+- ✅ PIN created, recovery code shown
+- ✅ payment recorded with a real tap
+- ✅ no plain amounts / month names / PIN in app storage — `[]`
+- ✅ finance locked after restart, no amounts visible
+- ✅ wrong PIN refused
+- ✅ right PIN opens, payment intact
+- ✅ Back key returns to attendance
+- ✅ leaving finance locked it again
+- ✅ backup: share sheet opened — `mCurrentFocus=Window{cb1fbea u0 com.android.intentresolver/com.android.intentresolver.ChooserActivity}`
+- ✅ backup: file saved in Documents — `kashf-backup-2026-11-23.json`
+- ✅ board size landscape 1920x1080: all 40 students on one screen — `[1920, 1080, True]`
+- ✅ phone portrait — `[412, 915]`
+- ✅ exit button visible
+- ✅ exit button closes the app — `mCurrentFocus=Window{34c8aa1 u0 com.android.launcher3/com.android.launcher3.uioverrides.QuickstepLauncher}`
+- ✅ data intact after exiting with the button
+- ✅ web-version backup restored with the same student IDs — `['ck9vjptp', 'piu1hk9d', 'ujeh1kf4']`
+- ✅ same PIN as the web version opens the restored finance
+- ✅ no app crash in logcat

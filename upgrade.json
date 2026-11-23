@@ -1,0 +1,97 @@
+[
+ {
+  "name": "A: old app (v1.0.7 code) installed",
+  "ok": true,
+  "detail": "Performing Streamed Install\nSuccess"
+ },
+ {
+  "name": "A: old app is v1.0.7",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "A: realistic data in the old app (6 groups, 199 students, PIN, payments)",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "A: new version installed over the old one (no uninstall)",
+  "ok": true,
+  "detail": "Performing Streamed Install\nSuccess"
+ },
+ {
+  "name": "A: running the new version",
+  "ok": true,
+  "detail": "1.0.10"
+ },
+ {
+  "name": "A: every stored item still there",
+  "ok": true,
+  "detail": "[]"
+ },
+ {
+  "name": "A: no stored item changed by the update",
+  "ok": true,
+  "detail": "[]"
+ },
+ {
+  "name": "A: only the safety records were added",
+  "ok": true,
+  "detail": "['k2:appver', 'k2:autobk']"
+ },
+ {
+  "name": "A: kill-safe copies of the data still on disk",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "A: automatic copy made before the update was used",
+  "ok": true,
+  "detail": "{'name': 'kashf-auto-before-v1.0.10-2026-11-23.json', 'at': 1795443581069, 'docs': 16, 'pub': True, 'from': None, 'to': '1.0.10'}"
+ },
+ {
+  "name": "A: copy is visible to the user in Documents/Kashf",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "A: register shows the 43-group with today's marks exactly as left",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "A: same PIN opens finance, payments and totals identical",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "A: settings kept",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "B: published v1.0.7 release installed",
+  "ok": true,
+  "detail": "Performing Streamed Install\nSuccess"
+ },
+ {
+  "name": "B: data created in the old release (tapped 'أولى ثانوي')",
+  "ok": true,
+  "detail": "33.4"
+ },
+ {
+  "name": "B: new signed release installs OVER v1.0.7 (same key, no uninstall)",
+  "ok": true,
+  "detail": "Performing Streamed Install\nSuccess"
+ },
+ {
+  "name": "B: after updating, the release shows the group made in the old release (matches 'one group', not 'empty app')",
+  "ok": true,
+  "detail": "diff to 'one group' 0.0, to 'empty' 14.1"
+ },
+ {
+  "name": "B: installed version",
+  "ok": true,
+  "detail": "versionName=1.0.10"
+ }
+]
