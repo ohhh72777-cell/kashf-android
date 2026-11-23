@@ -244,6 +244,21 @@ details.del summary::-webkit-details-marker{display:none}
 .toast{position:fixed;bottom:6.4rem;left:50%;transform:translateX(-50%);z-index:40;background:var(--ink);color:var(--bg);border-radius:1rem;padding:.7rem .8rem .7rem 1.2rem;display:flex;align-items:center;gap:1rem;font-weight:600;max-width:calc(100% - 2rem);box-shadow:0 6px 24px rgba(0,0,0,.18)}
 .toast button{min-height:2.9rem;border:none;background:rgba(255,255,255,.14);color:inherit;border-radius:.8rem;padding:0 1rem;font-weight:700}
 
+/* student search (any screen) and the student card it opens */
+.hsearch{flex:none;width:3.1rem;height:3.1rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--ink)}
+.hsearch svg{width:1.45rem;height:1.45rem}
+.sres{display:flex;flex-direction:column;gap:.45rem;max-height:55vh;overflow-y:auto}
+.sres button{min-height:3.6rem;border-radius:1rem;border:1.5px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.4rem 1.1rem;text-align:start;font-weight:700;font-size:1.05rem}
+.sres small{color:var(--muted);font-weight:600;font-size:.85rem;text-align:end}
+.absd{display:flex;flex-wrap:wrap;gap:.4rem;max-height:30vh;overflow-y:auto}
+.absd span{padding:.35rem .7rem;border-radius:.7rem;background:var(--bad-soft);color:var(--bad-text);font-weight:700;font-size:.9rem}
+.paym{display:flex;flex-direction:column;gap:.4rem}
+.paym div{display:flex;justify-content:space-between;align-items:center;gap:.8rem;padding:.6rem .9rem;border-radius:.8rem;font-weight:700}
+.paym .ok{background:var(--ok-soft);color:var(--ok-text)}
+.paym .pt{background:var(--warn-soft);color:var(--warn-text)}
+.paym .no{background:var(--bad-soft);color:var(--bad-text)}
+.paym b{color:var(--ink)}
+
 /* phone attendance header: hidden on the board */
 .phead,.pfilter{display:none}
 @media (max-width:760px){
@@ -255,7 +270,9 @@ details.del summary::-webkit-details-marker{display:none}
      the page is clipped to the screen width and every row is allowed to wrap. */
   .app,header.top,nav.dock{overflow-x:clip}
   header.top{flex-wrap:wrap;padding:.5rem .8rem;gap:.5rem}
-  .brand{flex-direction:row;flex-wrap:wrap;align-items:center;gap:.2rem .8rem;width:100%;justify-content:space-between}
+  .brand{flex-direction:row;flex-wrap:wrap;align-items:center;gap:.2rem .8rem;width:auto;flex:1 1 0;min-width:0;justify-content:space-between}
+  .hsearch{width:2.9rem;height:2.9rem;border-radius:.9rem}
+  .sheet.top{align-self:flex-start;border-radius:1rem 1rem 1.4rem 1.4rem}
   .brand b{white-space:normal;min-width:0}
   .brand .sync{white-space:normal;text-align:start}
   .groups{width:100%;flex:none;flex-wrap:wrap;overflow-x:visible}
@@ -383,6 +400,7 @@ details.del summary::-webkit-details-marker{display:none}
 <div class="app" id="app">
   <header class="top">
     <div class="brand"><b>كشف الغياب والمصاريف</b><button type="button" class="sync wait" id="sync" data-act="syncinfo"><i></i><span>بيوصل…</span></button></div>
+    <button type="button" class="hsearch" data-act="gsearch" aria-label="بحث عن طالب" title="بحث عن طالب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
     <div class="groups" id="groups"></div>
   </header>
   <main id="view"><div class="empty">بيحمّل بياناتك…</div></main>
@@ -856,7 +874,7 @@ function setScreen(sc){
 const MOUNT={},UPDATE={};
 MOUNT.att=()=>
   '<div class="phead" id="phead"><div class="ph-row"><button type="button" class="ph-group" data-act="pickgroup" aria-label="اختيار المجموعة"><b id="phG"></b>'+I.down2+'</button>'+
-    '<label class="ph-date" id="phDw"><span id="phD"></span><input type="date" id="dpick2" aria-label="التاريخ"></label></div>'+
+    '<label class="ph-date" id="phDw"><span id="phD"></span><input type="date" id="dpick2" aria-label="التاريخ"></label><button type="button" class="hsearch" data-act="gsearch" aria-label="بحث عن طالب">'+I.search+'</button></div>'+
     '<div class="ph-stats" id="phS"></div><div class="ph-bar"><i id="phB"></i></div>'+
     '<div class="pfilter" id="phF" hidden><span id="phFt"></span><button type="button" data-act="absall">عرض الكل</button></div></div>'+
   '<div id="banner"></div>'+
@@ -1090,7 +1108,7 @@ function finPhone(w,g,months,list){
   const mid=S.fin.mid,gf=gFee(g.id);
   let h='<div class="phead fhead" id="fhead"><div class="ph-row">'+
     '<button type="button" class="ph-group" data-act="pickgroup" aria-label="اختيار المجموعة"><b>'+esc(g.n)+'</b>'+I.down2+'</button>'+
-    '<button type="button" class="ph-month" data-act="'+(months.length?"pickmonth":"newmonth")+'" aria-label="اختيار الشهر"><span class="mw"><span class="wd">الشهر</span><span class="dt">'+(mid?esc(monthName(mid)):"+ شهر جديد")+'</span></span>'+I.down2+'</button></div>';
+    '<button type="button" class="ph-month" data-act="'+(months.length?"pickmonth":"newmonth")+'" aria-label="اختيار الشهر"><span class="mw"><span class="wd">الشهر</span><span class="dt">'+(mid?esc(monthName(mid)):"+ شهر جديد")+'</span></span>'+I.down2+'</button><button type="button" class="hsearch" data-act="gsearch" aria-label="بحث عن طالب">'+I.search+'</button></div>';
   if(!gf&&list.length)h+='<button type="button" class="pfilter fwarn" data-act="gfee"><span>اشتراك المجموعة مش محدد</span><b>حدّده</b></button>';
   if(months.length&&list.length){
     const o=finCounts(list,mid),pct=o.exp?Math.min(100,Math.round(o.col/o.exp*100)):Math.round(o.paid/o.total*100);
@@ -1217,6 +1235,7 @@ async function ppKey(k){
 }
 async function afterUnlock(pp){
   bumpIdle();
+  const back=pp&&pp.then==="card"?pp.sid:null;
   if(pp&&pp.then==="change"){S.pp=newPP("change",{inSheet:true,relock:true});openSheetRaw({type:"pp",fin:true});return}
   if(pp&&pp.inSheet)closeSheet();
   S.pp=null;syncWanted();
@@ -1224,6 +1243,7 @@ async function afterUnlock(pp){
   if(Sync.legacy&&!finV().lg)await migrateLegacyFinance();
   else if(finV().lg&&!finV().sc&&Sync.legacy)scrubLegacyLater();
   if(S.screen==="fin")mountView();else updateAll();
+  if(back&&student(back)){openSheetRaw({type:"scard",id:back,live:true});loadHistory()}
 }
 
 /* ---------------- settings ---------------- */
@@ -1273,12 +1293,26 @@ function openSheetRaw(s){S.sheet=s;renderSheet()}
 function closeSheet(){S.sheet=null;if(S.pp&&S.pp.inSheet)S.pp=null;$("#sheet").innerHTML=""}
 function renderSheet(){
   const s=S.sheet,host=$("#sheet");if(!s){host.innerHTML="";return}
-  let h="",wide=false;
+  let h="",wide=false,top=false;
   if(s.type==="pp"){h=ppHtml(S.pp)}
   else if(s.type==="groups"){
     const gs=groupsList();
     h='<h2>اختار المجموعة</h2><div class="glist">'+gs.map(g=>'<button type="button" class="gchip" data-act="pickgroup2" data-id="'+g.id+'" aria-pressed="'+(g.id===S.gid)+'"><span>'+esc(g.n)+'</span><span class="sub" style="color:inherit;opacity:.75">'+ar(roster(g.id).length)+' طالب</span></button>').join("")+'</div>'+
       '<div class="acts"><button type="button" class="btn" data-act="close">إغلاق</button></div>';
+  }
+  else if(s.type==="gsearch"){
+    top=true;
+    h='<h2>بحث عن طالب</h2><div class="field"><input id="gq" type="search" enterkeyhint="search" autocomplete="off" placeholder="اكتب جزء من اسم الطالب أو رقم ولي الأمر" aria-label="اسم الطالب" value="'+esc(s.q||"")+'"></div>'+
+      '<div class="sres" id="gres">'+gsearchRes(s.q)+'</div><div class="acts"><button type="button" class="btn" data-act="close">إغلاق</button></div>';
+  }
+  else if(s.type==="scard"){
+    const st=student(s.id);if(!st){closeSheet();return}
+    const g=(core().groups||{})[st.g];
+    h='<div><h2>'+esc(st.n)+'</h2><div class="sub" style="margin-top:.3rem"><b style="color:var(--ink)">'+esc(g&&!g.x?g.n:"من غير مجموعة")+'</b>'+(st.ph?' · <span dir="ltr">'+esc(st.ph)+'</span>':'')+'</div></div>'+
+      '<section class="hist" style="margin-top:0"><h3>الحضور والغياب</h3><div id="scatt">'+cardAtt(st,s)+'</div></section>'+
+      '<section class="hist" style="margin-top:0"><h3>المصاريف</h3>'+cardPay(st)+'</section>'+
+      '<div class="acts">'+(s.from?'<button type="button" class="btn" data-act="gsearch">'+I.search+'بحث تاني</button>':'')+
+      '<button type="button" class="btn" data-act="student" data-id="'+st.id+'">'+I.edit+'السجل كامل والتعديل</button><button type="button" class="btn primary" data-act="close">تمام</button></div>';
   }
   else if(s.type==="fmonths"){
     const g=curGroup();if(!g||!F.key){closeSheet();return}
@@ -1340,7 +1374,7 @@ function renderSheet(){
   }else if(s.type==="syncinfo"){
     h='<h2>المزامنة</h2><div class="sub">'+esc($("#sync").lastChild.textContent)+'</div><div class="note">'+(Sync.be&&Sync.be.kind==="cloud"?"كل ضغطة بتتحفظ على الجهاز فورًا وتتبعت للسحابة، والأجهزة التانية المفتوحة بتستقبلها لحظيًا. لو النت قطع، التعديلات بتستنى وتتبعت لوحدها.":(NATIVE?"البيانات محفوظة على الجهاز ده ومش محتاجة نت. عشان تنقلها لجهاز تاني استخدم النسخة الاحتياطية من الإعدادات.":"الجهاز ده مش مسجل دخول بحساب Claude، فالبيانات هنا بس."))+'</div>'+(Sync.outbox.length?'<div class="note">مستني يتبعت: <b>'+ar(Sync.outbox.length)+'</b> تعديل</div>':'')+'<div class="acts"><button type="button" class="btn primary" data-act="syncnow">مزامنة الآن</button><button type="button" class="btn" data-act="close">تمام</button></div>';
   }
-  host.innerHTML='<div class="ov" data-act="ovclose"><div class="sheet'+(wide?" wide":"")+'" role="dialog" aria-modal="true">'+h+'</div></div>';
+  host.innerHTML='<div class="ov" data-act="ovclose"><div class="sheet'+(wide?" wide":"")+(top?" top":"")+'" role="dialog" aria-modal="true">'+h+'</div></div>';
 }
 /* ---- attendance record of one student ----
    A day counts only if that group's register was taken that day (at least one student marked
@@ -1398,10 +1432,38 @@ function histHtml(st,s){
   return h+'<div class="note">الأيام اللي متسجلش فيها كشف للمجموعة مش بتتحسب حضور ولا غياب.</div></section>';
 }
 async function loadHistory(){
-  const s=S.sheet;if(!s||s.type!=="student")return;const st=student(s.id);if(!st)return;
+  const s=S.sheet;if(!s||(s.type!=="student"&&s.type!=="scard"))return;const st=student(s.id);if(!st)return;
   const docs=await attendanceDocs();
   if(S.sheet!==s)return;
-  s.hrows=studentRecords(st,docs);const el=$("#hist");if(el)el.innerHTML=histHtml(st,s);
+  s.hrows=studentRecords(st,docs);
+  if(s.type==="scard"){const el=$("#scatt");if(el)el.innerHTML=cardAtt(st,s);return}
+  const el=$("#hist");if(el)el.innerHTML=histHtml(st,s);
+}
+/* ---- student search: name (or parent's number) → group, absences, payments ---- */
+function gsearchRes(q){
+  const qn=norm(q),qd=latin(String(q||"")).replace(/\D/g,""),gs=core().groups||{};
+  if(!qn)return '<div class="sub">اكتب جزء من الاسم، من أي مجموعة.</div>';
+  const list=allStudents().filter(x=>!x.x&&x.n&&gs[x.g]&&!gs[x.g].x&&(norm(x.n).indexOf(qn)>=0||(qd.length>=3&&latin(String(x.ph||"")).replace(/\D/g,"").indexOf(qd)>=0))).sort(cmpName);
+  if(!list.length)return '<div class="sub">مفيش طالب بالاسم ده.</div>';
+  return list.slice(0,60).map(x=>'<button type="button" data-act="scard" data-id="'+x.id+'"><span>'+esc(x.n)+'</span><small>'+esc(gs[x.g].n)+'</small></button>').join("")+
+    (list.length>60?'<div class="sub">فيه '+ar(list.length-60)+' كمان — اكتب حروف أكتر.</div>':'');
+}
+function cardAtt(st,s){
+  if(!s.hrows)return '<div class="sub">بيحمّل…</div>';
+  const rows=s.hrows,mk=todayStr().slice(0,7),mon=rows.filter(r=>r.date.slice(0,7)===mk);
+  const abM=mon.filter(r=>!r.s).length,abs=rows.filter(r=>!r.s),pct=rows.length?Math.round((rows.length-abs.length)/rows.length*100):null;
+  let h='<div class="hstats"><div><span>غياب الشهر</span><b class="r">'+ar(abM)+'</b></div><div><span>حضور الشهر</span><b class="g">'+ar(mon.length-abM)+'</b></div><div><span>كل الغياب</span><b class="r">'+ar(abs.length)+'</b></div><div><span>نسبة الحضور</span><b>'+(pct===null?"—":ar(pct)+"٪")+'</b></div></div>';
+  if(!rows.length)return h+'<div class="sub">لسه مفيش كشف متسجل للطالب ده.</div>';
+  if(!abs.length)return h+'<div class="sub">مغابش ولا يوم 👏</div>';
+  return h+'<div class="sub">أيام الغياب (الأحدث الأول):</div><div class="absd">'+abs.map(r=>'<span>'+esc(fmtWd.format(parseD(r.date)))+' '+shortDate(r.date)+'</span>').join("")+'</div>';
+}
+function cardPay(st){
+  if(!hasPin())return '<div class="sub">الحسابات لسه متعملهاش رمز.</div>';
+  if(!F.key)return '<div class="sub">الدفع مش بيظهر غير بعد فتح الحسابات بالرمز.</div><div class="acts"><button type="button" class="btn" data-act="cardunlock" data-id="'+st.id+'">'+I.lock+'افتح الحسابات</button></div>';
+  const months=finMonths();if(!months.length)return '<div class="sub">لسه مفيش شهور في الحسابات.</div>';
+  const f=feeOf(st);
+  return '<div class="paym">'+months.slice().reverse().map(m=>{const p=payOf(m.id,st.id),k=payState(p,f);
+    return '<div class="'+(k==="paid"?"ok":k==="part"?"pt":"no")+'"><b>'+esc(m.n)+'</b><span>'+(k==="paid"?"✓ دفع"+(p.a?" "+money(p.a):""):k==="part"?"دفع جزء: "+money(p.a)+" من "+money(f):"لم يدفع"+(f?" — "+money(f):""))+'</span></div>'}).join("")+'</div>';
 }
 function openAmount(o){openSheetRaw(Object.assign({type:"amount",fin:true},o))}
 function showRecovery(code){openSheetRaw({type:"recovery",code:code,fin:true})}
@@ -1471,6 +1533,9 @@ document.addEventListener("click",async ev=>{
     case "finish":openSheetRaw({type:"finish",live:true});return;
     case "finishreview":{closeSheet();const g=curGroup();if(!g)return;const dm=dayMap(g.id,S.date);S.absOnly=new Set(roster(g.id).filter(s=>dm[s.id]!==1).map(s=>s.id));if(!S.absOnly.size)S.absOnly=null;$("#view").scrollTop=0;updateAll();return}
     case "pickgroup":openSheetRaw({type:"groups"});return;
+    case "gsearch":{const q=S.sheet&&S.sheet.type==="scard"?(S.lastQ||""):"";openSheetRaw({type:"gsearch",q:q});const i=$("#gq");if(i){i.focus();try{i.setSelectionRange(q.length,q.length)}catch(e){}}return}
+    case "scard":{const from=!!(S.sheet&&S.sheet.type==="gsearch");if(from)S.lastQ=S.sheet.q||"";openSheetRaw({type:"scard",id:id,live:true,from:from});loadHistory();return}
+    case "cardunlock":S.pp=newPP("unlock",{inSheet:true,then:"card",sid:id});openSheetRaw({type:"pp",fin:true});return;
     case "pickmonth":openSheetRaw({type:"fmonths",fin:true});return;
     case "fmonth2":closeSheet();S.fin.mid=id;$("#view").scrollTop=0;updateAll();return;
     case "pickgroup2":closeSheet();if(S.screen==="fin"&&F.key&&id!==S.gid)S.fin.filter="all";S.gid=id;S.q="";S.absOnly=null;LS.set("k2:ui",{gid:id});syncWanted();$("#view").scrollTop=0;updateAll();return;
@@ -1499,8 +1564,8 @@ document.addEventListener("click",async ev=>{
     case "pp":ppKey(el.dataset.k);return;
     case "pprecover":S.pp=newPP("recover",{inSheet:S.pp&&S.pp.inSheet});renderPP();return;
     case "ppcancel":{const pp=S.pp,wasSheet=pp&&pp.inSheet;
-      if(pp&&pp.purpose==="recover"){S.pp=newPP("unlock",{inSheet:wasSheet,then:pp.then});renderPP();return}
-      S.pp=null;if(wasSheet)closeSheet();else updateAll();return}
+      if(pp&&pp.purpose==="recover"){S.pp=newPP("unlock",{inSheet:wasSheet,then:pp.then,sid:pp.sid});renderPP();return}
+      S.pp=null;if(wasSheet){if(pp&&pp.then==="card"&&student(pp.sid)){openSheetRaw({type:"scard",id:pp.sid,live:true});loadHistory()}else closeSheet()}else updateAll();return}
     case "lock":lockFin();mountView();toast("الحسابات اتقفلت");return;
     case "month":{if(S.fin.mid===id){openSheetRaw({type:"monthedit",id:id,fin:true})}else{S.fin.mid=id;updateAll()}return}
     case "newmonth":openSheetRaw({type:"monthnew",fin:true});return;
@@ -1543,6 +1608,7 @@ document.addEventListener("click",async ev=>{
   }
 });
 document.addEventListener("input",ev=>{
+  if(ev.target.id==="gq"){if(S.sheet&&S.sheet.type==="gsearch"){S.sheet.q=ev.target.value;const r=$("#gres");if(r)r.innerHTML=gsearchRes(S.sheet.q)}return}
   if(ev.target.id==="stuQ"){S.stuQ=ev.target.value;UPDATE.stu();return}
   if(ev.target.id==="q"){S.q=ev.target.value;UPDATE.att()}
 });
