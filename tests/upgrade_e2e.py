@@ -75,7 +75,10 @@ def part_a():
     p.click('[data-act="amtsave"]'); time.sleep(.4)
     for i in range(1, 9): p.click(f".mrow:nth-child({i+1}) .pc"); time.sleep(.25)
     p.wait("document.querySelectorAll('.pc.paid').length===8")
-    fin_before = p.ev("document.querySelector('#fwrap').innerText")
+    # compare the students x months rows (names, fees, every payment cell), not the whole screen:
+    # the screen layout around the list may change between versions, the data must not
+    FIN = "[...document.querySelectorAll('#fwrap .mrow:not(.mhead)')].map(r=>r.innerText.replace(/\\s+/g,' ').trim()).join('\\n')"
+    fin_before = p.ev(FIN)
     p.click('[data-act="screen"][data-s="set"]'); time.sleep(.3); p.click('[data-act="size"][data-v="l"]'); p.click('[data-act="lockleave"]'); time.sleep(2)
     before = json.loads(p.ev(STORE)); files_before = json.loads(p.ev(FILES))
     ok("A: realistic data in the old app (6 groups, 199 students, PIN, payments)", len(json.loads(before["k2:l:core"])["students"]) == 199 and "k2:l:keys" in before and fin_before.count("٢٠٠") > 0)
@@ -97,7 +100,7 @@ def part_a():
     p.click('[data-act="screen"][data-s="att"]'); time.sleep(.5)
     ok("A: register shows the 43-group with today's marks exactly as left", p.wait("document.querySelectorAll('#agrid .card').length===42") and p.ev(ON) == on_before)
     p.click('[data-act="screen"][data-s="fin"]'); p.wait("!!document.querySelector('.key')"); p.pin("2580")
-    ok("A: same PIN opens finance, payments and totals identical", p.wait("document.querySelectorAll('.pc.paid').length===8", 30) and p.ev("document.querySelector('#fwrap').innerText") == fin_before)
+    ok("A: same PIN opens finance, payments and totals identical", p.wait("document.querySelectorAll('.pc.paid').length===8", 30) and p.ev(FIN) == fin_before)
     p.click('[data-act="screen"][data-s="set"]')
     ok("A: settings kept", p.ev("document.documentElement.dataset.size") == "l")
     adb("exec-out screencap -p > " + OUT + "/upgrade_after.png")
